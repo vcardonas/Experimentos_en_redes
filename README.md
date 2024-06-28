@@ -14,6 +14,5 @@ El proyecto se desarrolló con las siguientes versiones:
 Se dispone de un script denominado [Experimentos_en_redes.Rmd](./Experimentos_en_redes.Rmd) el cual está basado en Kolaczyk, E. D., & Csárdi, G. (2014). Statistical analysis of network data with R (Vol. 65). New York: Springer. Chapter 10.
 
 ## Propietarias
-
 El proyecto es realizado por Valentina Cardona (vcardonas@unal.edu.co) y Natalia Perdomo.
 
