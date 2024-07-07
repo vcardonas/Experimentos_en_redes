@@ -14,24 +14,39 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(kableExtra)
 ```
 
-## R Markdown
+# Introducción
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+En todas las ciencias existe un interés generalizado en evaluar el efecto de tratamientos o intervenciones de diversos tipos. Podría decirse que el ejemplo prototípico de este tipo de estudios es el **ensayo aleatorio** (en inglés, *randomized controlled trial*, RTC), también llamado como
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+$$Prueba\ A/B$$ Este diseño experimental convencional se caracteriza por dos aspectos principales:
 
-```{r cars}
-summary(cars)
-```
+1.  La noción de dos grupos a comparar (tratamiento y control, o A y B).
+2.  La asignación aleatoria de individuos a dichos grupos.
 
-## Including Plots
+Sin embargo, en estos experimentos suele asumirse que el tratamiento dado a un individuo no influye en los resultados de otros individuos (**no interferencia**).
 
-You can also embed plots, for example:
+Naturalmente, al realizar experimentos en redes no se puede descartar de manera realista la interferencia.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+# Inferencia Causal Utilizando Resultados Potenciales
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Supongamos que tenemos una población finita en la que queremos evaluar la eficacia de un tratamiento frente a un grupo control sin tratamiento, considerando una relación entre pares de individuos que se espera sea relevante para el experimento. Dicho escenario se verá representado por:
+
+$$G=(V,E)$$ donde los vértices en $V$ corresponden a los $N_V$ individuos en la población, y las aristas en $E$ a sus relaciones.
+
+Sea $z_i = 1$ para indicar que el individuo $i \in V$ recibió el tratamiento. Denotamos $\mathbf{z} = (z_1, \ldots, z_N)^T \in \{0, 1\}^N$ como el **vector de asignación de tratamientos**.
+
+Un diseño experimental es una forma de elegir tal vector de tratamiento. Sea $p_{\mathbf{z}} = \mathbb{P}(\mathbf{Z} = \mathbf{z})$ la **probabilidad de que la asignación de tratamientos** $\mathbf{z}$ sea generada por el diseño.
+
+Finalmente, sea $\theta_i(\mathbf{z})$ el **resultado para el individuo** $i$ bajo el tratamiento $\mathbf{z}$.
+
+El **problema fundamental de la inferencia causal** es el hecho de que, aunque deseamos evaluar la diferencia en los resultados de los individuos bajo diferentes tratamientos, no podemos medir múltiples resultados simúltaneamente en un mismo individuo.
+
+| Individuos | Mundo "ideal"      | Mundo "ideal"      | Mundo real         | Mundo real         |
+|------------|--------------------|--------------------|--------------------|--------------------|
+|            | $Z_i=0$            | $Z_i=1$            | $Z_i=0$            | $Z_i=1$            |
+| 1          | $\mathscr{O}_1(0)$ | $\mathscr{O}_1(1)$ | $\mathscr{O}_1(0)$ | ?                  |
+| 2          | $\mathscr{O}_2(0)$ | $\mathscr{O}_2(1)$ | ?                  | $\mathscr{O}_2(1)$ |
+
