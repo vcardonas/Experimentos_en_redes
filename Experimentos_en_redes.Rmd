@@ -40,13 +40,129 @@ Sea $z_i = 1$ para indicar que el individuo $i \in V$ recibió el tratamiento. D
 
 Un diseño experimental es una forma de elegir tal vector de tratamiento. Sea $p_{\mathbf{z}} = \mathbb{P}(\mathbf{Z} = \mathbf{z})$ la **probabilidad de que la asignación de tratamientos** $\mathbf{z}$ sea generada por el diseño.
 
-Finalmente, sea $\theta_i(\mathbf{z})$ el **resultado para el individuo** $i$ bajo el tratamiento $\mathbf{z}$.
+Finalmente, sea $\mathscr{O}(\mathbf{z})$ el **resultado para el individuo** $i$ bajo el tratamiento $\mathbf{z}$.
 
 El **problema fundamental de la inferencia causal** es el hecho de que, aunque deseamos evaluar la diferencia en los resultados de los individuos bajo diferentes tratamientos, no podemos medir múltiples resultados simúltaneamente en un mismo individuo.
 
 | Individuos | Mundo "ideal"      | Mundo "ideal"      | Mundo real         | Mundo real         |
-|------------|--------------------|--------------------|--------------------|--------------------|
+|---------------|---------------|---------------|---------------|---------------|
 |            | $Z_i=0$            | $Z_i=1$            | $Z_i=0$            | $Z_i=1$            |
 | 1          | $\mathscr{O}_1(0)$ | $\mathscr{O}_1(1)$ | $\mathscr{O}_1(0)$ | ?                  |
 | 2          | $\mathscr{O}_2(0)$ | $\mathscr{O}_2(1)$ | ?                  | $\mathscr{O}_2(1)$ |
 
+En el marco de resultados potenciales, también llamado modelo causal de Rubin, se incluye tanto los resultados observados como los contrafactuales (potenciales). También supone que **no hay interferencia entre individuos**, es decir, $\mathscr{O}_i(\mathbf{z})=\mathscr{O}_i(z_i)$. En este mundo ideal, el efecto promedio del tratamiento se estimaría $$
+\tau_{ATE} = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(1) - \mathscr{O}_i(0) \right] = \bar{\mathscr{O}}(1) - \bar{\mathscr{O}}(0).
+$$ Pero al considerar el caso clásico (mundo real) del experiemento completamente aleatorio, donde $N_t$ individuos son asignados a tratamientos, y $N_c=N_v-N_t$ al control. Entonces, la probabilidad de asignación de tratamiento sería $$
+p_z = \left( \frac{N_v}{N_t} \right)^{-1}
+$$ y el estimador insesgado de $\tau_{ATE}$ es $$
+\hat{\tau}_{ATE}(\mathbf{z}) = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \frac{z_i\mathscr{O}_i(1)}{N_t / N_v} - \frac{(1 - z_i) \mathscr{O}_i(0)}{N_c / N_v} \right].
+$$ La varianza de este estimados está dada por $$Var(\hat{\tau}_{ATE}(\mathbf{Z})) = \frac{S_c^2}{N_c} + \frac{S_t^2}{N_t} + \frac{S_tc^2}{N_v}$$ Si los efectos del tratamiento $\mathscr{O}_i(1) - \mathscr{O}_i(0)$ son constantes en todos los individuos $i$, entonces la *varianza de los efectos del tratamiento* $S_tc^2 = 0$, y por lo tanto, tenemos una estimación insesgada de $Var(\hat{\tau}_{ATE})$. Lastimosamente, no podemos estimar dicha varianza basándose únicamente en los resultados observados, ya que no observamos ambos $\mathscr{O}_i(1)$ y $\mathscr{O}_i(0)$ para cualquiera de los individuos.
+
+La práctica común es utilizar el estimados insesgado bajo el supuesto de un efecto de tratamiento constante o derivar estimadores basados en otros supuestos.
+
+# Inferencia de Red
+
+En el contexto de las redes, se puede esperar que haya **interferencia**, es decir, $\mathscr{O}_i(\mathbf{Z}) \neq \mathscr{O}_i(Z_i)$.
+
+## Ejemplo
+
+Una nueva dirección en una planta de productos forestales propuso cambios en el paquete de compensación de los trabajadores. Inicialmente, dos negociadores sindicales explicaron los cambios a los demás, pero los trabajadores no los aceptaron, resultando en una huelga. La dirección solicitó a un consultor externo que analizara la estructura de comunicación entre 24 trabajadores relevantes. Al identificar la red social, se explicó los cambios a dos trabajadores específicos, quienes discutieron con sus colegas. En dos días, los trabajadores pidieron reabrir las negociaciones y la huelga se resolvió. La red final tenía 24 vértices y 38 aristas.
+
+```{r, fig.align='center'}
+# Librerías
+library(igraph)
+library(sand)
+
+# Cargar datos
+data(strike)
+summary(strike)
+```
+
+Una arista entre dos vértiuces indica que los empleados se comunicaron con un nivel de frencuencia mínimamente suficiente sobre la huelga. Hay tres subgrupos presentes en la red, codificados por el atributo nodal $\verb|race|$.
+
+```{r, fig.align='center'}
+# O -> Older
+# Y -> Younger
+# ---------------------
+# E -> English-speaking
+# S -> Spanish-speaking
+table(V(strike)$race)
+```
+
+La intervención o tratamiento diseñado para explorar el fenómeno de la interferencia de la red sería la estrategia de explicar los cambios en el paquete de compensación con el objetivo de influir en el comportamiento organizacional. La estrategia puede verse como una versión de una red de campaña de persuación.
+
+```{r, fig.align='center'}
+# Darle forma de triángulo a los vértices
+mytriangle <- function(coords, v = NULL, params) {
+  vertex.color <- params("vertex", "color")
+  if (length(vertex.color) != 1 && !is.null(v)) {
+    vertex.color <- vertex.color[v]
+  }
+  vertex.size <- 1/200 * params("vertex", "size")
+  if (length(vertex.size) != 1 && !is.null(v)) {
+  vertex.size <- vertex.size[v]
+  }
+
+  symbols(x = coords[,1], y = coords[,2], bg = vertex.color,
+  stars = cbind(vertex.size, vertex.size, vertex.size),
+  add = TRUE, inches = FALSE)
+}
+
+add_shape("triangle", clip = shapes("circle")$clip, plot = mytriangle)
+```
+
+```{r, fig.align='center'}
+# Indicar "race" a través de la forma del vértice
+V(strike)[V(strike)$race=="YS"]$shape <- "circle"   # Empleado joven de habla hispana
+V(strike)[V(strike)$race=="YE"]$shape <- "square"   # Empleado joven de habla inglesa
+V(strike)[V(strike)$race=="OE"]$shape <- "triangle" # Empleado mayor de habla inglesa
+```
+
+```{r, fig.align='center'}
+# Distingur los 4 representantes que difundieron la estrategia mediante colores
+nv <- vcount(strike)
+z <- numeric(nv)
+z[c(21,22)] <- 1
+z[c(5,15)] <- 2
+V(strike)$color <- rep("white", nv)
+V(strike)[z==1]$color <- "red3"
+V(strike)[z==2]$color <- "green3"
+```
+
+```{r, fig.align='center'}
+# Empleados sindicales (primera socialización de la estrategia)
+V(strike)[z==1]$names
+```
+
+```{r, fig.align='center'}
+# Empleados escogidos a partir del análisis de red (segunda socialización de la estrategia)
+V(strike)[z==2]$names
+```
+
+```{r, fig.height = 8, fig.width = 8, fig.align = 'center'}
+# Visualización
+set.seed(42)
+my.dist <- c(rep(1.8, 4), rep(2.2, 9), rep(2, 11))
+l <- layout_with_kk(strike)
+plot(strike,layout = l, vertex.label = V(strike)$names,
+     vertex.label.degree = -pi/3,
+     vertex.label.dist = my.dist)
+```
+
+Mientras que los dos representantes sindicales (Sam y Wendle) originalmente encargados de explicar los cambios en el paquete de compensación a los demás parecen alejados del resto de trabajadores, los dos empleados que luego fueron invitados a unirse (Bob y Norm) parecen ser mucho más centrales en la red. Esta impresión visual puede confirmarse examinando sus centralidades de intermediación (*betweenness*) y cercanía (*closeness*).
+
+```{r, fig.align='center'}
+print("betweenness")
+print(V(strike)[z %in% c(1,2)]$names)
+print(rank(-betweenness(strike))[z %in% c(1,2)])
+```
+
+```{r, fig.align='center'}
+print("closeness")
+print(V(strike)[z %in% c(1,2)]$names)
+print(rank(-closeness(strike))[z %in% c(1,2)])
+```
+
+Aunque Bob y Norm ocupan el primer y segundo lugar según cualquier medida, Sam se encuentra un poco detrás de ellos, y Wendle está casi en el último lugar entre los 24 empleados de la red. Esta discrepancia tiene implicaciones directas no solo en la medida en que se difunden los mensajes deseados en la red, sino también en nuestra capacidad para estimar esta difusión.
+
+# Inferencia causal bajo interferencia de red
