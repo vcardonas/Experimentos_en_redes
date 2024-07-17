@@ -1,15 +1,19 @@
 ---
 title: "Experimentos en Redes"
 author: 
-- Natalia Perdomo & Valentina Cardona
-- Email vcardonas@unal.edu.co
+- Valentina Cardona & Natalia Perdomo
+- Email vcardonas@unal.edu.co & naperdomol@unal.edu.co
 - GitHub https://github.com/vcardonas
+- Rpubs https://rpubs.com/vcardonas
 date: ""
 output:
   html_document:
     highlight: default
+    theme: cosmo #yeti #united #flatly #spacelab
     number_sections: yes
-    theme: cosmo
+    toc: yes
+    toc_float:
+      collapsed: true
 ---
 
 ```{r setup, include=FALSE}
@@ -20,49 +24,64 @@ library(kableExtra)
 # Introducción
 
 En todas las ciencias existe un interés generalizado en evaluar el efecto de tratamientos o intervenciones de diversos tipos. Podría decirse que el ejemplo prototípico de este tipo de estudios es el **ensayo aleatorio** (en inglés, *randomized controlled trial*, RTC), también llamado como
+$$Prueba\ A/B$$
+Este diseño experimental convencional se caracteriza por dos aspectos principales:
 
-$$Prueba\ A/B$$ Este diseño experimental convencional se caracteriza por dos aspectos principales:
+1.  La noción de **dos grupos a comparar** (tratamiento y control, o A y B).
 
-1.  La noción de dos grupos a comparar (tratamiento y control, o A y B).
-2.  La asignación aleatoria de individuos a dichos grupos.
+2.  La **asignación aleatoria** de individuos a dichos grupos.
 
 Sin embargo, en estos experimentos suele asumirse que el tratamiento dado a un individuo no influye en los resultados de otros individuos (**no interferencia**).
 
-Naturalmente, al realizar experimentos en redes no se puede descartar de manera realista la interferencia.
+Naturalmente, **al realizar experimentos en redes no se puede descartar de manera realista la interferencia**.
 
-# Inferencia Causal Utilizando Resultados Potenciales
+# Inferencia Causal
 
-Supongamos que tenemos una población finita en la que queremos evaluar la eficacia de un tratamiento frente a un grupo control sin tratamiento, considerando una relación entre pares de individuos que se espera sea relevante para el experimento. Dicho escenario se verá representado por:
+El experimento para **evaluar la eficacia de un tratamiento** en una población finita, considerando las relaciones entre pares de individuos que esperamos sean relevantes, se representa como:
+$$G=(V,E)$$
+donde los vértices en $V$ corresponden a $N_V$ individuos de la población y las aristas en $E$ a sus relaciones.
 
-$$G=(V,E)$$ donde los vértices en $V$ corresponden a los $N_V$ individuos en la población, y las aristas en $E$ a sus relaciones.
+Definimos:
 
-Sea $z_i = 1$ para indicar que el individuo $i \in V$ recibió el tratamiento. Denotamos $\mathbf{z} = (z_1, \ldots, z_N)^T \in \{0, 1\}^N$ como el **vector de asignación de tratamientos**.
+- $z_i = 1$ si el individuo $i \in V$ **recibe el tratamiento** y $z_i = 0$ si no.
 
-Un diseño experimental es una forma de elegir tal vector de tratamiento. Sea $p_{\mathbf{z}} = \mathbb{P}(\mathbf{Z} = \mathbf{z})$ la **probabilidad de que la asignación de tratamientos** $\mathbf{z}$ sea generada por el diseño.
+- $\mathbf{z} = (z_1, \ldots, z_{N_v})^T \in \{0, 1\}^{N_v}$ como el **vector de asignación de tratamientos**.
 
-Finalmente, sea $\mathscr{O}(\mathbf{z})$ el **resultado para el individuo** $i$ bajo el tratamiento $\mathbf{z}$.
+-  $p_{\mathbf{z}} = \mathbb{P}(\mathbf{Z} = \mathbf{z})$ como la probabilidad de que una asignación de tratamientos \( \mathbf{z} \) sea generada por el diseño experimental.
 
-El **problema fundamental de la inferencia causal** es el hecho de que, aunque deseamos evaluar la diferencia en los resultados de los individuos bajo diferentes tratamientos, no podemos medir múltiples resultados simúltaneamente en un mismo individuo.
+- $\mathscr{O}_i(\mathbf{z})$ como el resultado para el individuo $i$ bajo el tratamiento $\mathbf{z}$.
 
-| Individuos | Mundo "ideal"      | Mundo "ideal"      | Mundo real         | Mundo real         |
-|---------------|---------------|---------------|---------------|---------------|
-|            | $Z_i=0$            | $Z_i=1$            | $Z_i=0$            | $Z_i=1$            |
-| 1          | $\mathscr{O}_1(0)$ | $\mathscr{O}_1(1)$ | $\mathscr{O}_1(0)$ | ?                  |
-| 2          | $\mathscr{O}_2(0)$ | $\mathscr{O}_2(1)$ | ?                  | $\mathscr{O}_2(1)$ |
+Aunque deseamos evaluar la diferencia en los resultados de los individuos bajo diferentes tratamientos, **no podemos medir múltiples resultados simúltaneamente en un mismo individuo**.
 
-En el marco de resultados potenciales, también llamado modelo causal de Rubin, se incluye tanto los resultados observados como los contrafactuales (potenciales). También supone que **no hay interferencia entre individuos**, es decir, $\mathscr{O}_i(\mathbf{z})=\mathscr{O}_i(z_i)$. En este mundo ideal, el efecto promedio del tratamiento se estimaría $$
-\tau_{ATE} = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(1) - \mathscr{O}_i(0) \right] = \bar{\mathscr{O}}(1) - \bar{\mathscr{O}}(0).
-$$ Pero al considerar el caso clásico (mundo real) del experiemento completamente aleatorio, donde $N_t$ individuos son asignados a tratamientos, y $N_c=N_v-N_t$ al control. Entonces, la probabilidad de asignación de tratamiento sería $$
-p_z = \left( \frac{N_v}{N_t} \right)^{-1}
-$$ y el estimador insesgado de $\tau_{ATE}$ es $$
-\hat{\tau}_{ATE}(\mathbf{z}) = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \frac{z_i\mathscr{O}_i(1)}{N_t / N_v} - \frac{(1 - z_i) \mathscr{O}_i(0)}{N_c / N_v} \right].
-$$ La varianza de este estimados está dada por $$Var(\hat{\tau}_{ATE}(\mathbf{Z})) = \frac{S_c^2}{N_c} + \frac{S_t^2}{N_t} + \frac{S_tc^2}{N_v}$$ Si los efectos del tratamiento $\mathscr{O}_i(1) - \mathscr{O}_i(0)$ son constantes en todos los individuos $i$, entonces la *varianza de los efectos del tratamiento* $S_tc^2 = 0$, y por lo tanto, tenemos una estimación insesgada de $Var(\hat{\tau}_{ATE})$. Lastimosamente, no podemos estimar dicha varianza basándose únicamente en los resultados observados, ya que no observamos ambos $\mathscr{O}_i(1)$ y $\mathscr{O}_i(0)$ para cualquiera de los individuos.
+## Marco de Resultados Potenciales
 
-La práctica común es utilizar el estimados insesgado bajo el supuesto de un efecto de tratamiento constante o derivar estimadores basados en otros supuestos.
+En el modelo causal de Rubin, se consideran tanto los resultados observados como los contrafactuales (potenciales). Además, se asume que **no hay interferencia entre individuos**, conocido como el **supuesto del valor de tratamiento unitario estable** (en inglés, *stable unit treatment value assumption*, SUTVA):
+$$\mathscr{O}_i(\mathbf{z})=\mathscr{O}_i(z_i)$$
+En este *mundo ideal*, el **efecto promedio del tratamiento** (en inglés, *average treatment effect*, ATE) se estimaría de tal forma que
+$$
+\tau_{ATE} = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(1) - \mathscr{O}_i(0) \right] = \bar{\mathscr{O}}(1) - \bar{\mathscr{O}}(0)
+$$ 
+
+## Estimadores
+
+Al considerar un experimento aleatorio, donde $N_t$ individuos reciben tratamiento y $N_c=N_v-N_t$ son control, la probabilidad de asignación de tratamiento es $p_z = \left( \frac{N_v}{N_t} \right)^{-1}$.
+
+El estimador insesgado de $\tau_{ATE}$ es
+$$\hat{\tau}_{ATE}(\mathbf{z}) = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \frac{z_i\mathscr{O}_i(1)}{N_t / N_v} - \frac{(1 - z_i) \mathscr{O}_i(0)}{N_c / N_v} \right]$$
+La varianza de este estimador está dada por
+$$Var(\hat{\tau}_{ATE}(\mathbf{Z})) = \frac{S_c^2}{N_c} + \frac{S_t^2}{N_t} + \frac{S_tc^2}{N_v}$$
+donde 
+$$S_c^2 = \frac{1}{N_v - 1} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(1) - \bar{\mathscr{O}}(0) \right]^2 \quad \text{,}$$
+$$S_t^2 = \frac{1}{N_v - 1} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(1) - \bar{\mathscr{O}}(1) \right]^2 \quad \text{y}$$
+$$S_{tc}^2 = \frac{1}{N_v - 1} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(1) - \mathscr{O}_i(0) - \tau_{ATE}\right]^2 $$
+En la práctica, es común utilizar este estimador bajo el supuesto de un efecto de tratamiento constante (con *varianza de los efectos del tratamiento* $S_{tc}^2 = 0$) o derivar estimadores basados en otros supuestos.
+
+Lastimosamente, **no podemos estimar dicha varianza basándose únicamente en los resultados observados**, ya que no observamos ambos $\mathscr{O}_i(1)$ y $\mathscr{O}_i(0)$ para cualquiera de los individuos.
 
 # Inferencia de Red
 
-En el contexto de las redes, se puede esperar que haya **interferencia**, es decir, $\mathscr{O}_i(\mathbf{Z}) \neq \mathscr{O}_i(Z_i)$.
+En el contexto de las redes, se puede esperar que haya **interferencia**, es decir,
+$$\mathscr{O}_i(\mathbf{Z}) \neq \mathscr{O}_i(Z_i)$$
 
 ## Ejemplo
 
