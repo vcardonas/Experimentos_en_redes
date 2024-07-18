@@ -3,8 +3,8 @@ title: "Experimentos en Redes"
 author: 
 - Valentina Cardona & Natalia Perdomo
 - Email vcardonas@unal.edu.co & naperdomol@unal.edu.co
-- GitHub https://github.com/vcardonas
-- Rpubs https://rpubs.com/vcardonas
+- GitHub https://github.com/vcardonas & 
+- Rpubs https://rpubs.com/vcardonas & 
 date: ""
 output:
   html_document:
@@ -151,7 +151,6 @@ V(strike)[z==1]$color <- "red3"
 ```{r, fig.align='center'}
 V(strike)[z==1]$names
 ```
-
 ```{r, fig.height = 8, fig.width = 8, fig.align = 'center'}
 # Visualización
 set.seed(42)
@@ -181,7 +180,6 @@ print("betweenness")
 V(strike)[z==1]$names
 rank(-betweenness(strike))[z==1]
 ```
-
 ```{r results = 'hold'}
 print("closeness")
 V(strike)[z==1]$names
@@ -222,7 +220,6 @@ donde
 * $f$ es la función del mapeo de exposición.
 
 Denotamos $A$ como la matriz de adyacencia de la red $G$, y el vector $\mathbf{x}_i$ como la i-ésima columna de esta matriz. Entonces, definimos la **categorización de exposición simple de cuatro niveles**:
-
 $$f(\mathbf{z}, \mathbf{x}_i) = 
 \begin{cases}
 c_{11}(\text{Exposición Directa + Indirecta}), & z_i\mathit{I}_{ \{\mathbf{z}^T\mathbf{x}_i>0\} } = 1\\
@@ -230,7 +227,6 @@ c_{10}(\text{Exposición Directa Aislada}), & z_i\mathit{I}_{ \{\mathbf{z}^T\mat
 c_{01}(\text{Exposición Indirecta}), & (1 - z_i)\mathit{I}_{ \{\mathbf{z}^T\mathbf{x}_i>0\} } = 1\\
 c_{00}(\text{No Exposición}), & (1 - z_i)\mathit{I}_{ \{\mathbf{z}^T\mathbf{x}_i=0\} } = 1
 \end{cases}$$
-
 donde $\mathbf{z}^T\mathbf{x}_i$ es igual al número de vecinos directamente expuestos del individuo $i$.
 
 ### Ejemplo: Red de Huelga
@@ -270,7 +266,6 @@ El resto de los empleados no fueron expuestos $c_{00}$.
 V(strike)[(1-z)*(1-I.ex.nbrs)==1]$exposure <- "c['00']"
 V(strike)[(1-z)*(1-I.ex.nbrs)==1]$names
 ```
-
 ```{r results = 'hold'}
 table(V(strike)$exposure)
 ```
@@ -297,7 +292,6 @@ legend("topright", legend = parse(text = unique(V(strike)$exposure)),
 ## Efectos Causales bajo Interferencia de Red
 
 La adición de la interferencia al marco de resultados potenciales requiere refinar la noción de efectos causales. El efecto promedio del tratamiento (ATE) bajo interferencia de la red se generaliza como:
-
 $$
 \tau_{ATE} = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(\mathbf{1}) - \mathscr{O}_i(\mathbf{0}) \right] = \bar{\mathscr{O}}(\mathbf{1}) - \bar{\mathscr{O}}(\mathbf{0})
 $$ 
@@ -306,7 +300,6 @@ donde $\mathbf{1}$ y $\mathbf{0}$ son ahora vectores de longitud $N_v$ de unos y
 El problema es que este parámetro representa una **agregación de ambos efectos (directos e indirectos) de la asignación del tratamiento** y, en contextos donde se buscan efectos "puros" del tratamiento, la interferencia puede ser una molestia.
 
 Bajo el marco del mapeo de exposición de Aronow y Samii, usamos la diferencia $\mathscr{O}_i(c_k) - \mathscr{O}_i(c_l)$ para representar el efecto causal de la condición de exposición $k$ versus la $l$ para el individuo $i$. Entonces, el **efecto causal promedio de exposición a la condición $k$ vesus $l$** se define como:
-
 $$
 \tau(c_k, c_l) = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(c_k) - \mathscr{O}_i(c_l) \right] = \bar{\mathscr{O}}(c_k) - \bar{\mathscr{O}}(c_l)
 $$ 
@@ -321,7 +314,283 @@ Considerando de nuevo la red de huelga, tenemos cuatro exposiciones: $c_{11}, c_
 
 * $\tau(c_{11}, c_{00})$ que captura el efecto total del tratamiento.
 
+Supongamos que la reacción de los empleados se califica en una escala de 1 (no receptivo) a 10 (completamente receptivo), registrando que la receptividad incrementa según la exposición. Para cada individuo $i \in V$, se tiene que:
 
+* $\mathscr{O}_i(c_{00}) = 1$: mínima receptividad sin exposición.
+
+* $\mathscr{O}_i(c_{01}) = 5$: receptividad aumenta con solo exposición indirecta.
+
+* $\mathscr{O}_i(c_{10}) = 7$: mayor receptividad con exposición directa aislada.
+
+* $\mathscr{O}_i(c_{11}) = 10$: máxima receptividad con exposición completa.
+
+Por tanto, los correspondientes efectos causales son $\tau(c_{01}, c_{00}), \tau(c_{10}, c_{00}), \tau(c_{11}, c_{00})$, que toman respectivamente los siguientes valores.
+
+```{r results = 'hold'}
+O.c00 <- 1.0
+O.c01 <- 5
+O.c10 <- 7
+O.c11 <- 10.0
+
+c(O.c01, O.c10, O.c11) - O.c00
+```
+
+## Diseño de Experimentos en Redes
+
+La elección de la asignación de tratamientos es un elemento clave del diseño experimental de redes. En un modelo clásico de inferencia causal, la asignación se captura a través de la distribución $p_{\mathbf{z}}$, es decir, la probabilidad de asignación del tratamiento $\mathbf{z}$.
+
+Bajo interferencia, es más adecuado considerar la exposición general de los individuos al tratamiento. Por tanto, para caracterizar un diseño experimental de red, es útil **cuantificar cómo la asignación de tratamiento induce exposición bajo un modelo específico de exposición en la red**. 
+
+En el contexto de los mapeos de exposición en redes, la **probabilidad de un individuo $i$ sea sujeto a la condición de exposición $k$** se define como
+$$p_{i}^{e}(c_k) = \sum_{\mathbf{z}} p_{\mathbf{z}} \mathit{I}_{ \{ f(\mathbf{z}, \mathbf{x}_i) = c_k \} }$$
+Para todos los individuos $i$ y pares de individuos $i$ y $j$, los valores de las distintas probabilidades de exposición pueden recuperarse a partir de dos clases de matrices.
+
+Supongamos que hay $\mathit{M}$ posibles asignaciones de tratamiento $\mathbf{z}$, siendo
+\begin{equation}
+\mathit{I}_{k} =
+\begin{bmatrix}
+  \mathit{I}_{\{f(\mathbf{z}_1, \mathbf{x}_1) = c_k\}} &
+  \mathit{I}_{\{f(\mathbf{z}_2, \mathbf{x}_1) = c_k\}} & \cdots &
+  \mathit{I}_{\{f(\mathbf{z}_{\mathit{M}}, \mathbf{x}_1) = c_k\}} \\
+  
+  \mathit{I}_{\{f(\mathbf{z}_1, \mathbf{x}_2) = c_k\}} &
+  \mathit{I}_{\{f(\mathbf{z}_2, \mathbf{x}_2) = c_k\}} & \cdots &
+  \mathit{I}_{\{f(\mathbf{z}_{\mathit{M}}, \mathbf{x}_2) = c_k\}} \\
+  
+  \vdots & \vdots & \ddots & \vdots \\
+  
+  \mathit{I}_{\{f(\mathbf{z}_1, \mathbf{x}_{N_v}) = c_k\}} &
+  \mathit{I}_{\{f(\mathbf{z}_2, \mathbf{x}_{N_v}) = c_k\}} & \cdots &
+  \mathit{I}_{\{f(\mathbf{z}_{\mathit{M}}, \mathbf{x}_{N_v}) = c_k\}}
+\end{bmatrix}
+\end{equation}
+Además, sea $\mathbf{P} = diag(p_{z_1},\ldots, p_{z_\mathit{M}})$. 
+
+Entonces, en la primera matriz simétrica $N_v \times N_v$, podemos recuperar para una condición de exposición fija $c_k$, tanto la probabilidad de exposición individual $p_{i}^{e}(c_k)$ como las probabilidades de exposición conjunta $p_{ij}^{e}(c_k)$, para todos los individuos $i, j = 1,\ldots,N_v$:
+\begin{equation}
+\mathit{I}_k \mathbf{P} \mathit{I}_{k}^{T} =
+\begin{bmatrix}
+
+  p_{1}^{e}(c_k) & p_{12}^{e}(c_k) & \cdots & p_{1N_v}^{e}(c_k) \\
+  
+  p_{21}^{e}(c_k) & p_{2}^{e}(c_k) & \cdots & p_{2N_v}^{e}(c_k) \\
+  
+  \vdots & \vdots & \ddots & \vdots \\
+  
+  p_{N_v1}^{e}(c_k) & p_{N_v2}^{e}(c_k) & \cdots & p_{N_v}^{e}(c_k)
+\end{bmatrix}
+\end{equation}
+y la segunda matriz no simétrica $N_v \times N_v$ nos permite recuperar las probabilidades de exposición conjunta $p_{ij}^{e}(c_k, c_l)$ para todos los pares de individuos $i$ y $j$, para condiciones de exposición fijas $c_k$ y $c_l$:
+\begin{equation}
+\mathit{I}_k \mathbf{P} \mathit{I}_{l}^{T} =
+\begin{bmatrix}
+
+  0 & p_{12}^{e}(c_k, c_l) & \cdots & p_{1N_v}^{e}(c_k, c_l) \\
+  
+  p_{21}^{e}(c_k, c_l) & 0 & \cdots & p_{2N_v}^{e}(c_k, c_l) \\
+  
+  \vdots & \vdots & \ddots & \vdots \\
+  
+  p_{N_v1}^{e}(c_k, c_l) & p_{N_v2}^{e}(c_k, c_l) & \cdots & 0
+\end{bmatrix}
+\end{equation}
+Note que la diagonal está compuesta por ceros debido al supuesto de que los individuos solo pueden caer en una categoría de exposición.
+
+El problema es que en la práctica, es probable que **las dos matrices sean computacionalmente inviables para calcular directamente** $p_{i}^{e}(c_k)$, $p_{ij}^{e}(c_k)$ y $p_{ij}^{e}(c_k, c_l)$.
+
+### Simulación de Monte Carlo
+
+Se pueden usar simulaciones de Monte Carlo para aproximar el valor de las probabilidades con precisión arbitraria.
+
+Simulando $n$ valores de $p_{\mathbf{z}}$, para cada una de las $K$ condiciones de exposición podemos entonces formar $K$ matrices $\hat{\mathit{I}}_k$ de dimensión $N_v \times n$.
+
+### Ejemplo: Red de Huelga
+
+Supongamos que en la red de huelga, se aplicó "tratamiento" a cuatro empleados elegidos uniformemente al azar para que desempeñen el rol de negociadores.
+
+```{r results = 'hold'}
+# Inicializar
+set.seed(41)
+m <- 4 # Número de representantes
+n <- 10000 # Número de ensayos de Montecarlo
+# 4 condiciones de exposición
+I11 <- matrix(,nrow=nv,ncol=n)
+I10 <- matrix(,nrow=nv,ncol=n)
+I01 <- matrix(,nrow=nv,ncol=n)
+I00 <- matrix(,nrow=nv,ncol=n)
+
+# Muestreo Monte Carlo
+for(i in 1:n){
+  z <- rep(0,nv) # Vector z
+  reps.ind <- sample((1:nv), m, replace = FALSE) # Seleccionar representantes
+  z[reps.ind] <- 1 # Asignar 1 al vector z
+  
+  reps.nbrs <- as.numeric(z%*%A > 0) # Indicador de vecinos expuestos
+  
+  # Una matriz por cada condición de exposición
+  I11[,i] <- z*reps.nbrs
+  I10[,i] <- z*(1-reps.nbrs)
+  I01[,i] <- (1-z)*reps.nbrs
+  I00[,i] <- (1-z)*(1-reps.nbrs)
+}
+```
+
+Los estimadores insesgados para las dos matrices con las probabilidades de exposición son $\hat{\mathit{I}}_k\hat{\mathit{I}}_k^T/n$ y $\hat{\mathit{I}}_k\hat{\mathit{I}}_l^T/n$, y convergen con seguridad por la ley de los grandes números.
+
+```{r results = 'hold'}
+I11.11 <- I11%*%t(I11)/n
+I10.10 <- I10%*%t(I10)/n
+I01.01 <- I01%*%t(I01)/n
+I00.00 <- I00%*%t(I00)/n
+```
+
+```{r, fig.height = 8, fig.width = 8, fig.align = 'center'}
+suppressMessages(suppressWarnings(library(fields)))
+
+# Visualización
+names.w.space <- paste(V(strike)$names," ",sep = "")
+my.cex.x <- 0.75
+my.cex.y <- 0.75
+
+plot_Ik <- function(M, title) {
+  # Márgenes
+  par(mar = c(4,4,4,4))
+  # Matriz
+  image(M, zlim = c(0, 0.7), xaxt = "n", yaxt = "n", col = cm.colors(16))
+  # Nombres ejes
+  mtext(side = 1, text = names.w.space, at = seq(0.0, 1.0, (1/23)),
+        las = 3, cex = my.cex.x)
+  mtext(side = 2, text = names.w.space, at = seq(0.0, 1.0, 1/23),
+        las = 1, cex = my.cex.y)
+  # Título
+  mtext(side = 3, text = title, at = 0.5, las = 1)
+  # Agregar líneas para diferenciar grupos
+  u <- 1/23
+  uo2 <- 1/46
+  xmat <- cbind(rep(3*u+uo2,2), rep(12*u+uo2,2))
+  ymat <- cbind(c(0-uo2,1+uo2), c(0-uo2,1+uo2))
+  matlines(xmat, ymat, lty = 1, lw = 1, col = "black")
+  matlines(ymat, xmat, lty = 1, lw = 1, col = "black")
+  # Añadir barra de colores
+  image.plot(legend.only = TRUE, zlim = range(seq(0.0,0.7,0.1)), col = cm.colors(16))
+}
+
+# Crear los cuatro gráficos
+par(mfrow = c(2, 2))
+plot_Ik(I11.11, expression("Exposición Directa + Indirecta"~(c["11"])))
+plot_Ik(I10.10, expression("Exposición Directa Aislada"~(c["10"])))
+plot_Ik(I01.01, expression("Exposición Indirecta"~(c["01"])))
+plot_Ik(I00.00, expression("No Exposición"~(c["00"])))
+```
+Con solo cuatro de 24 actores tratados como negociadores, solo las probabilidades de exposición indirecta y sin exposición tienen valores altos. Se observa que en el subgrupo de empleados jóvenes de habla hispana hay alta probabilidad de no exposición.
+
+## Inferencia para Efectos Causales
+
+En el marco del mapeo de exposición, las estimaciones de interés son:
+
+1. $\bar{\mathscr{O}}(c_k)$ siendo la resultado promedio potencial bajo la condición de exposición $c_k$ para $k = 1,\ldots,K$.
+
+2. $\tau(c_k, c_l) = \bar{\mathscr{O}}(c_k) - \bar{\mathscr{O}}(c_l)$ siendo el efecto causal promedio de la condición de exposición $c_k$ versus $c_l$.
+
+Note que los $\bar{\mathscr{O}}(c_k)$ corresponderán a una **muestra de probabilidades desiguales sin reemplazo de resultados potenciales** bajo una condición dada, y las estimaciones del 2 son todas funciones lineales simples de las del 1.
+
+### Método de Horvitz y Thompson
+
+Suponiendo que conocemos o podemos aproximarnos con precisión a las probabilidades de exposición relevantes, la inferencia se realiza siguiendo el método de Horvitz y Thompson.
+
+Este estimador insesgado y bien definido para $\bar{\mathscr{O}}(c_k)$, considera el muestro de probabilidades desiguales mediante el uso de ponderación de probabilidad inversa.
+
+$$\hat{\bar{\mathscr{O}}}(c_k) = \frac{1}{N_v} \sum_{i=1}^{N_v} \mathit{I}_{ \{ f(\mathbf{z}, \mathbf{x}_i) = c_k \} } \frac{\mathscr{O}_i(c_k)}{p_i^e(c_k)}$$
+
+A su vez, $\hat{\tau}(c_k, c_l) = \hat{\bar{\mathscr{O}}}(c_k) - \hat{\bar{\mathscr{O}}}(c_l)$ es un estimador insesgado para $\tau(c_k, c_l)$. 
+
+Las varianzas de estos estimadores son, respectivamente, 
+
+$$Var[\hat{\bar{\mathscr{O}}}(c_k)] = \frac{1}{N_v^2} 
+\Biggl\{ \sum_{i=1}^{N_v} p_i^e(c_k) [1-p_i^e(c_k)] \biggl[ \frac{\mathscr{O}_i(c_k)}{p_i^e(c_k)} \biggl]^2 + 
+\sum_{i=1}^{N_v}\sum_{i\neq1} [p_{ij}^e(c_k) - p_i^e(c_k)p_j^e(c_k)]  \frac{\mathscr{O}_i(c_k)}{p_i^e(c_k)} \frac{\mathscr{O}_j(c_k)}{p_j^e(c_k)} 
+\Biggl\}$$
+$$Var(\hat{\tau}(c_k, c_l)) = Var[\hat{\bar{\mathscr{O}}}(c_k)] + Var[\hat{\bar{\mathscr{O}}}(c_l)] - 2Cov[\hat{\bar{\mathscr{O}}}(c_k), \hat{\bar{\mathscr{O}}}(c_l)]$$
+
+### Ejemplo: Red de Huelga
+
+Al suponer que los cuatro representantes de la red de huelga fueron elegidos al azar, las estimaciones de los efectos causales promedio $\tau(c_{11}, c_{00})$, $\tau(c_{10}, c_{00})$ y $\tau(c_{01}, c_{00})$ se obtienen a continuación.
+
+```{r results = 'hold'}
+# Vector de asignación del tratamiento
+z <- rep(0,nv)
+z[c(5,15,21,22)] <- 1
+
+# Indicador de vecinos expuestos
+reps.nbrs <- as.numeric(z%*%A > 0)
+
+# Condiciones de exposición
+c11 <- z*reps.nbrs
+c10 <- z*(1-reps.nbrs)
+c01 <- (1-z)*reps.nbrs
+c00 <- (1-z)*(1-reps.nbrs)
+
+# Estimadores Horvitz y Thompson
+Obar.c11 <- O.c11*mean(c11/diag(I11.11))
+Obar.c10 <- O.c10*mean(c10/diag(I10.10))
+Obar.c01 <- O.c01*mean(c01/diag(I01.01))
+Obar.c00 <- O.c00*mean(c00/diag(I00.00))
+
+print(c(Obar.c11, Obar.c10, Obar.c01) - Obar.c00)
+```
+
+Estos valores se comparan bastante mal con sus respectivos valores objetivo 9, 6 y 4, sugiriendo que pese a ser insesgado, la varianza de estos estimadores sea motivo de preocupación.
+
+El problema es que $Var(\hat{\tau}(c_k, c_l))$ no se puede estimar de manera insesgada o consistente, debido a su último término que depende de resultados potenciales (no observados). 
+
+Es posible usar la simulación de Monte Carlo para producir un estimador de esta varianza con sesgo conservador y obtener una idea del rendimiento de estos estimadores.
+
+```{r results = 'hold'}
+set.seed(41)
+n <- 10000
+Obar.c11 <- numeric()
+Obar.c10 <- numeric()
+Obar.c01 <- numeric()
+Obar.c00 <- numeric()
+
+for(i in 1:n){
+  z <- rep(0,nv)
+  reps.ind <- sample((1:nv),m,replace=FALSE)
+  z[reps.ind] <- 1
+  reps.nbrs <- as.numeric(z%*%A > 0)
+  c11 <- z*reps.nbrs
+  c10 <- z*(1-reps.nbrs)
+  c01 <- (1-z)*reps.nbrs
+  c00 <- (1-z)*(1-reps.nbrs)
+  Obar.c11 <- c(Obar.c11, O.c11*mean(c11/diag(I11.11)))
+  Obar.c10 <- c(Obar.c10, O.c10*mean(c10/diag(I10.10)))
+  Obar.c01 <- c(Obar.c01, O.c01*mean(c01/diag(I01.01)))
+  Obar.c00 <- c(Obar.c00, O.c00*mean(c00/diag(I00.00)))
+}
+
+# Average causal effects
+ACE <- list(Obar.c11-Obar.c00,
+            Obar.c10-Obar.c00,
+            Obar.c01-Obar.c00)
+print(sapply(ACE, mean))
+```
+
+```{r results = 'hold'}
+# Diferencias con el valor objetivo
+print(sapply(ACE, mean) - c(O.c11-O.c00, O.c10-O.c00, O.c01-O.c00))
+```
+
+```{r results = 'hold'}
+# Errores estándar
+print(sapply(ACE, sd))
+```
+
+```{r results = 'hold'}
+# Coeficientes de variación
+sapply(ACE, sd) / c(9, 6, 4)
+```
+
+Vemos que la diferencia entre el valor esperado y los estimadores de los tres efectos causales promedio están cercanos a 0, sin embargo, los errores estándar correspondientes son bastante dispares. En este orden, los estimadores son mejores para capturar $\tau(c_{01}, c_{00})$, luego $\tau(c_{10}, c_{00})$ y, por último, $\tau(c_{11}, c_{00})$.
 
 # Referencias
 
