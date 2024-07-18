@@ -9,7 +9,7 @@ date: ""
 output:
   html_document:
     highlight: default
-    theme: cosmo #yeti #united #flatly #spacelab
+    theme: spacelab
     number_sections: yes
     toc: yes
     toc_float:
@@ -37,19 +37,19 @@ Naturalmente, **al realizar experimentos en redes no se puede descartar de maner
 
 # Inferencia Causal
 
-El experimento para **evaluar la eficacia de un tratamiento** en una población finita, considerando las relaciones entre pares de individuos que esperamos sean relevantes, se representa como:
+La inferencia causal permite **evaluar la eficacia de un tratamiento** en una población finita, considerando las relaciones entre pares de individuos que esperamos sean relevantes. Dicho experimento se ve representada por:
 $$G=(V,E)$$
 donde los vértices en $V$ corresponden a $N_V$ individuos de la población y las aristas en $E$ a sus relaciones.
 
 Definimos:
 
-- $z_i = 1$ si el individuo $i \in V$ **recibe el tratamiento** y $z_i = 0$ si no.
+* $z_i = 1$ si el individuo $i \in V$ **recibe el tratamiento** y $z_i = 0$ si no.
 
-- $\mathbf{z} = (z_1, \ldots, z_{N_v})^T \in \{0, 1\}^{N_v}$ como el **vector de asignación de tratamientos**.
+* $\mathbf{z} = (z_1, \ldots, z_{N_v})^T \in \{0, 1\}^{N_v}$ como el **vector de asignación de tratamientos**.
 
--  $p_{\mathbf{z}} = \mathbb{P}(\mathbf{Z} = \mathbf{z})$ como la probabilidad de que una asignación de tratamientos \( \mathbf{z} \) sea generada por el diseño experimental.
+*  $p_{\mathbf{z}} = \mathbb{P}(\mathbf{Z} = \mathbf{z})$ como la probabilidad de que una asignación de tratamientos \( \mathbf{z} \) sea generada por el diseño experimental.
 
-- $\mathscr{O}_i(\mathbf{z})$ como el resultado para el individuo $i$ bajo el tratamiento $\mathbf{z}$.
+* $\mathscr{O}_i(\mathbf{z})$ como el resultado para el individuo $i$ bajo el tratamiento $\mathbf{z}$.
 
 Aunque deseamos evaluar la diferencia en los resultados de los individuos bajo diferentes tratamientos, **no podemos medir múltiples resultados simúltaneamente en un mismo individuo**.
 
@@ -78,37 +78,43 @@ En la práctica, es común utilizar este estimador bajo el supuesto de un efecto
 
 Lastimosamente, **no podemos estimar dicha varianza basándose únicamente en los resultados observados**, ya que no observamos ambos $\mathscr{O}_i(1)$ y $\mathscr{O}_i(0)$ para cualquiera de los individuos.
 
-# Inferencia de Red
+# Interferencia de Red
 
 En el contexto de las redes, se puede esperar que haya **interferencia**, es decir,
 $$\mathscr{O}_i(\mathbf{Z}) \neq \mathscr{O}_i(Z_i)$$
 
-## Ejemplo
+## Ejemplo: Red de Huelga
 
-Una nueva dirección en una planta de productos forestales propuso cambios en el paquete de compensación de los trabajadores. Inicialmente, dos negociadores sindicales explicaron los cambios a los demás, pero los trabajadores no los aceptaron, resultando en una huelga. La dirección solicitó a un consultor externo que analizara la estructura de comunicación entre 24 trabajadores relevantes. Al identificar la red social, se explicó los cambios a dos trabajadores específicos, quienes discutieron con sus colegas. En dos días, los trabajadores pidieron reabrir las negociaciones y la huelga se resolvió. La red final tenía 24 vértices y 38 aristas.
+La nueva dirección en una planta forestal propuso cambios en el paquete de compensación para los trabajadores. Inicialmente, dos negociadores sindicales explicaron los cambios a los demás, pero no fueron aceptados, resultando en una huelga. Un consultor externo analizó la red de comunicación entre 24 trabajadores relevantes y se explicaron los cambios a dos de ellos, quienes discutieron con sus colegas. En dos días, los trabajadores pidieron reabrir las negociaciones y la huelga se resolvió.
+
+La red final tenía 24 vértices y 38 aristas. Una arista entre dos vértices indica que los empleados se comunicaron con una frecuencia mínima suficiente sobre la huelga.
 
 ```{r, fig.align='center'}
 # Librerías
-library(igraph)
-library(sand)
+suppressMessages(suppressWarnings(library(igraph)))
+suppressMessages(suppressWarnings(library(sand)))
 
 # Cargar datos
 data(strike)
 summary(strike)
 ```
+Hay tres subgrupos presentes en la red, codificados por el atributo nodal $\verb|race|$:
 
-Una arista entre dos vértiuces indica que los empleados se comunicaron con un nivel de frencuencia mínimamente suficiente sobre la huelga. Hay tres subgrupos presentes en la red, codificados por el atributo nodal $\verb|race|$.
+| $\verb|race|$ | Decodificación                     |
+| :------------ | :--------------------------------- |
+| OE            | Empleados mayores de habla inglesa |
+| YE            | Empleados jóvenes de habla inglesa |
+| YS            | Empleados jóvenes de habla hispana |
 
 ```{r, fig.align='center'}
 # O -> Older
 # Y -> Younger
-# ---------------------
 # E -> English-speaking
 # S -> Spanish-speaking
 table(V(strike)$race)
 ```
 
-La intervención o tratamiento diseñado para explorar el fenómeno de la interferencia de la red sería la estrategia de explicar los cambios en el paquete de compensación con el objetivo de influir en el comportamiento organizacional. La estrategia puede verse como una versión de una red de campaña de persuación.
+La intervención para explorar la interferencia de la red es la estrategia de explicar cambios en el paquete de compensación para influir en el comportamiento organizacional, similar a una red de campaña de persuasión.
 
 ```{r, fig.align='center'}
 # Darle forma de triángulo a los vértices
@@ -128,34 +134,22 @@ mytriangle <- function(coords, v = NULL, params) {
 }
 
 add_shape("triangle", clip = shapes("circle")$clip, plot = mytriangle)
-```
 
-```{r, fig.align='center'}
 # Indicar "race" a través de la forma del vértice
-V(strike)[V(strike)$race=="YS"]$shape <- "circle"   # Empleado joven de habla hispana
-V(strike)[V(strike)$race=="YE"]$shape <- "square"   # Empleado joven de habla inglesa
-V(strike)[V(strike)$race=="OE"]$shape <- "triangle" # Empleado mayor de habla inglesa
-```
+V(strike)[V(strike)$race=="YS"]$shape <- "circle"
+V(strike)[V(strike)$race=="YE"]$shape <- "square"
+V(strike)[V(strike)$race=="OE"]$shape <- "triangle"
 
-```{r, fig.align='center'}
-# Distingur los 4 representantes que difundieron la estrategia mediante colores
+# Distinguir los 4 representantes que difundieron la estrategia mediante colores
 nv <- vcount(strike)
 z <- numeric(nv)
-z[c(21,22)] <- 1
-z[c(5,15)] <- 2
+z[c(5,15,21,22)] <- 1
 V(strike)$color <- rep("white", nv)
 V(strike)[z==1]$color <- "red3"
-V(strike)[z==2]$color <- "green3"
 ```
 
 ```{r, fig.align='center'}
-# Empleados sindicales (primera socialización de la estrategia)
 V(strike)[z==1]$names
-```
-
-```{r, fig.align='center'}
-# Empleados escogidos a partir del análisis de red (segunda socialización de la estrategia)
-V(strike)[z==2]$names
 ```
 
 ```{r, fig.height = 8, fig.width = 8, fig.align = 'center'}
@@ -166,22 +160,170 @@ l <- layout_with_kk(strike)
 plot(strike,layout = l, vertex.label = V(strike)$names,
      vertex.label.degree = -pi/3,
      vertex.label.dist = my.dist)
+
+# Leyendas
+legend("topright", legend = unique(V(strike)$race), pt.bg = "white",
+       pch = c(21, 22, NA), bty = "n", col = "#777777", pt.cex = 1.5, pt.lwd = 2)
+points(x = rep(1.10, 1), y = rep(0.93, 1), pch = 24, bg = "white", col = "#777777", cex = 1.5)
+
+legend("topright", inset = c(0, 0.1), legend = "Negociadores", pt.bg = "red3",
+       pch = 21, bty = "n", col = "#777777",
+       pt.cex = 1.5, pt.lwd = 2)
+
+# Agregar pie de página
+mtext("Los dos representantes sindicales (primera socialización de la estrategia) aparecen con asterisco (*)", side = 1, line = 3, adj = 1, cex = 0.8)
 ```
 
-Mientras que los dos representantes sindicales (Sam y Wendle) originalmente encargados de explicar los cambios en el paquete de compensación a los demás parecen alejados del resto de trabajadores, los dos empleados que luego fueron invitados a unirse (Bob y Norm) parecen ser mucho más centrales en la red. Esta impresión visual puede confirmarse examinando sus centralidades de intermediación (*betweenness*) y cercanía (*closeness*).
+Sam y Wendle, los representantes sindicales, parecen alejados del resto de trabajadores, mientras que Bob y Norm, los empleados que se unieron después, son más centrales en la red. Esto se confirma al examinar sus centralidades de intermediación (*betweenness*) y cercanía (*closeness*).
 
-```{r, fig.align='center'}
+```{r results = 'hold'}
 print("betweenness")
-print(V(strike)[z %in% c(1,2)]$names)
-print(rank(-betweenness(strike))[z %in% c(1,2)])
+V(strike)[z==1]$names
+rank(-betweenness(strike))[z==1]
 ```
 
-```{r, fig.align='center'}
+```{r results = 'hold'}
 print("closeness")
-print(V(strike)[z %in% c(1,2)]$names)
-print(rank(-closeness(strike))[z %in% c(1,2)])
+V(strike)[z==1]$names
+rank(-closeness(strike))[z==1]
 ```
 
 Aunque Bob y Norm ocupan el primer y segundo lugar según cualquier medida, Sam se encuentra un poco detrás de ellos, y Wendle está casi en el último lugar entre los 24 empleados de la red. Esta discrepancia tiene implicaciones directas no solo en la medida en que se difunden los mensajes deseados en la red, sino también en nuestra capacidad para estimar esta difusión.
 
-# Inferencia causal bajo interferencia de red
+# Inferencia Causal bajo Interferencia de Red
+
+Al buscar extender el marco clásico de resultados potenciales a experimentos en red, surge una tensión entre la complejidad de la interferencia y su impacto en:
+
+1. Definir estimaciones significativas.
+
+2. Producir estimadores y cuantificar la incertidumbre asociada.
+
+## Modelos de Exposición en Redes
+
+Ahora la respuesta del individuo $i$ se entiende como **el resultado de la exposición completa de dicho individuo al vector de asignación de tratamientos** $\mathbf{z}$, en lugar de sólo el producto del tratamiento $z_i$ al cual fue asignado ese individuo (como sucede en SUTVA).
+
+El problema es que habrá $2^{N_v}$ posibles exposiciones por cada uno de los $N_v$ individuos, haciendo imposible el inferencia causal.
+
+### Mapeos de Exposición
+
+Es una restricción de modelado, propuesta por Aronow y Samii, sobre el grado en que la interferencia de otros individuos en la red afecta la exposición de un individuo $i$.
+
+Se asume que efectivamente hay un número finito $K$ de condiciones $\{c_1, \ldots, c_K\}$ al que el individuo $i$ está expuesto.
+
+Decimos que $i$ está expuesto a la condición $k$ si 
+$$f(\mathbf{z}, \mathbf{x}_i) = c_k$$
+
+donde
+
+* $\mathbf{z}$ es el vector de asignación de tratamientos.
+
+* $\mathbf{x}_i$ es el vector de información adicional del individuo $i$.
+
+* $f$ es la función del mapeo de exposición.
+
+Denotamos $A$ como la matriz de adyacencia de la red $G$, y el vector $\mathbf{x}_i$ como la i-ésima columna de esta matriz. Entonces, definimos la **categorización de exposición simple de cuatro niveles**:
+
+$$f(\mathbf{z}, \mathbf{x}_i) = 
+\begin{cases}
+c_{11}(\text{Exposición Directa + Indirecta}), & z_i\mathit{I}_{ \{\mathbf{z}^T\mathbf{x}_i>0\} } = 1\\
+c_{10}(\text{Exposición Directa Aislada}), & z_i\mathit{I}_{ \{\mathbf{z}^T\mathbf{x}_i=0\} } = 1\\
+c_{01}(\text{Exposición Indirecta}), & (1 - z_i)\mathit{I}_{ \{\mathbf{z}^T\mathbf{x}_i>0\} } = 1\\
+c_{00}(\text{No Exposición}), & (1 - z_i)\mathit{I}_{ \{\mathbf{z}^T\mathbf{x}_i=0\} } = 1
+\end{cases}$$
+
+donde $\mathbf{z}^T\mathbf{x}_i$ es igual al número de vecinos directamente expuestos del individuo $i$.
+
+### Ejemplo: Red de Huelga
+
+Para poder identificar la exposición de cada individuo bajo el modelo de exposición propuesto por Aronow y Samii, se debe calcular el indicador de vecinos directamente expuestos:
+
+```{r results = 'hold'}
+A <- as_adjacency_matrix(strike)
+I.ex.nbrs <- as.numeric(z%*%A > 0)
+I.ex.nbrs
+```
+
+En la red de huelga, hay cuatro empleados que recibieron exposición tanto directa como indirecta $c_{11}$,
+
+```{r results = 'hold'}
+V(strike)[z*I.ex.nbrs==1]$exposure <- "c[11]"
+V(strike)[z*I.ex.nbrs==1]$names
+```
+
+once empleados recibieron sólo exposición indirecta $c_{01}$
+
+```{r results = 'hold'}
+V(strike)[(1-z)*I.ex.nbrs==1]$exposure <- "c['01']"
+V(strike)[(1-z)*I.ex.nbrs==1]$names
+```
+
+y ninguno recibió exposición directa aislada $c_{10}$.
+
+```{r results = 'hold'}
+V(strike)[z*(1-I.ex.nbrs)==1]$exposure <- "c[10]"
+V(strike)[z*(1-I.ex.nbrs)==1]$names
+```
+
+El resto de los empleados no fueron expuestos $c_{00}$.
+
+```{r results = 'hold'}
+V(strike)[(1-z)*(1-I.ex.nbrs)==1]$exposure <- "c['00']"
+V(strike)[(1-z)*(1-I.ex.nbrs)==1]$names
+```
+
+```{r results = 'hold'}
+table(V(strike)$exposure)
+```
+
+La categorización de exposición simple de cuatro niveles se puede visualizar como
+
+```{r, fig.height = 8, fig.width = 8, fig.align = 'center'}
+suppressMessages(suppressWarnings(library(RColorBrewer)))
+
+# Definir colores para los valores de exposición
+set.seed(42)
+palette_colors <- brewer.pal(length(unique(V(strike)$exposure)), "Set3")
+exposure_colors <- setNames(palette_colors, unique(V(strike)$exposure))
+vertex_colors <- exposure_colors[V(strike)$exposure]
+
+# Visualización
+plot(strike,layout = l, vertex.label = V(strike)$names,
+     vertex.label.degree = -pi/3, vertex.label.dist = my.dist,
+     vertex.color = vertex_colors)
+legend("topright", legend = parse(text = unique(V(strike)$exposure)),
+       pt.bg = exposure_colors, bty = "n", pch = 21, col = "#777777")
+```
+
+## Efectos Causales bajo Interferencia de Red
+
+La adición de la interferencia al marco de resultados potenciales requiere refinar la noción de efectos causales. El efecto promedio del tratamiento (ATE) bajo interferencia de la red se generaliza como:
+
+$$
+\tau_{ATE} = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(\mathbf{1}) - \mathscr{O}_i(\mathbf{0}) \right] = \bar{\mathscr{O}}(\mathbf{1}) - \bar{\mathscr{O}}(\mathbf{0})
+$$ 
+donde $\mathbf{1}$ y $\mathbf{0}$ son ahora vectores de longitud $N_v$ de unos y ceros, respectivamente. Compara resultados potenciales bajo tratamiento completo ($\mathbf{z=1}$) versus control total ($\mathbf{z=0}$). 
+
+El problema es que este parámetro representa una **agregación de ambos efectos (directos e indirectos) de la asignación del tratamiento** y, en contextos donde se buscan efectos "puros" del tratamiento, la interferencia puede ser una molestia.
+
+Bajo el marco del mapeo de exposición de Aronow y Samii, usamos la diferencia $\mathscr{O}_i(c_k) - \mathscr{O}_i(c_l)$ para representar el efecto causal de la condición de exposición $k$ versus la $l$ para el individuo $i$. Entonces, el **efecto causal promedio de exposición a la condición $k$ vesus $l$** se define como:
+
+$$
+\tau(c_k, c_l) = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(c_k) - \mathscr{O}_i(c_l) \right] = \bar{\mathscr{O}}(c_k) - \bar{\mathscr{O}}(c_l)
+$$ 
+
+### Ejemplo: Red de Huelga
+
+Considerando de nuevo la red de huelga, tenemos cuatro exposiciones: $c_{11}, c_{10}, c_{01}, c_{00}$. Un conjunto natural de contrastes son:
+
+* $\tau(c_{01}, c_{00})$ que captura el efecto general indirecto del tratamiento.
+
+* $\tau(c_{10}, c_{00})$ que captura el efecto general directo del tratamiento.
+
+* $\tau(c_{11}, c_{00})$ que captura el efecto total del tratamiento.
+
+
+
+# Referencias
+
+Kolaczyk, E. D., & Csárdi, G. (2014). *Statistical analysis of network data with R* (Vol. 65). New York: Springer. Chapter 10.
+
