@@ -3,8 +3,8 @@ title: "Experimentos en Redes"
 author: 
 - Valentina Cardona & Natalia Perdomo
 - Email vcardonas@unal.edu.co & naperdomol@unal.edu.co
-- GitHub https://github.com/vcardonas & 
-- Rpubs https://rpubs.com/vcardonas & 
+- GitHub https://github.com/vcardonas
+- Rpubs https://rpubs.com/vcardonas
 date: ""
 output:
   html_document:
@@ -35,67 +35,123 @@ Sin embargo, en estos experimentos suele asumirse que el tratamiento dado a un i
 
 Naturalmente, **al realizar experimentos en redes no se puede descartar de manera realista la interferencia**.
 
-# Inferencia Causal
+# Modelo Neyman-Rubin: Resultados Potenciales
 
-La inferencia causal permite **evaluar la eficacia de un tratamiento** en una población finita, considerando las relaciones entre pares de individuos que esperamos sean relevantes. Dicho experimento se ve representada por:
-$$G=(V,E)$$
-donde los vértices en $V$ corresponden a $N_V$ individuos de la población y las aristas en $E$ a sus relaciones.
+Supongamos que queremos evaluar la efectividad de un tratamiento en un conjunto finito compuesto por $N$ unidades experimentales. La dificultad de esta tarea radica en que no podemos medir múltiples resultados simultáneamente un individuo dado, aunque deseamos evaluar la diferencia en su variable de resultado bajo diferentes opciones de tratamiento. 
 
-Definimos:
+El modelo de inferencia causal aborda este problema al **incorporar en la medición del impacto la idea de todos los resultados posibles bajo el diseño experimental**, es decir, incluyendo tanto los resultados observados como los contrafactuales (potenciales).
 
-* $z_i = 1$ si el individuo $i \in V$ **recibe el tratamiento** y $z_i = 0$ si no.
+```{r, echo=FALSE}
+# Create the data frame
+df <- data.frame(
+  Individual = c(1, 2),
+  `Zi = 0` = c("O1(0)", "O2(0)"),
+  `Zi = 1` = c("O1(1)", "O2(1)"),
+  `Zi = 0.` = c("O1(0)", "?"),
+  `Zi = 1.` = c("?", "O2(1)")
+)
 
-* $\mathbf{z} = (z_1, \ldots, z_{N_v})^T \in \{0, 1\}^{N_v}$ como el **vector de asignación de tratamientos**.
+# Rename the columns
+colnames(df) <- c("Individuo", "Zi = 0", "Zi = 1", "Zi = 0", "Zi = 1")
 
-*  $p_{\mathbf{z}} = \mathbb{P}(\mathbf{Z} = \mathbf{z})$ como la probabilidad de que una asignación de tratamientos \( \mathbf{z} \) sea generada por el diseño experimental.
+# Create the table
+kable(df, caption = "Resultados Potenciales") %>%
+  kable_styling(full_width = FALSE, position = "center") %>%
+  add_header_above(c(" ", "Resultados\nposibles" = 2, "Resultados\nobservados" = 2))
+```
 
-* $\mathscr{O}_i(\mathbf{z})$ como el resultado para el individuo $i$ bajo el tratamiento $\mathbf{z}$.
+Sean \(\mathscr{O}_i(1)\) y \(\mathscr{O}_i(0)\) los resultados del individuo \(i\) bajo el tratamiento y en ausencia de este, respectivamente. En el modelo tradicional, se asume que no existe interferencia entre individuos, es decir, que la variable de resultado \(\mathscr{O}_i\) depende únicamente de su asignación al grupo de tratamiento o al de control, y es independiente de las asignaciones de las demás unidades experimentales. Así, se define el efecto causal para el individuo \(i\) (también llamado **efecto causal a nivel de unidad**) como una función únicamente de \(\mathscr{O}_i(1)\) y \(\mathscr{O}_i(0)\)
 
-Aunque deseamos evaluar la diferencia en los resultados de los individuos bajo diferentes tratamientos, **no podemos medir múltiples resultados simúltaneamente en un mismo individuo**.
+\[ 
+\tau_{i}=\left[\mathscr{O}_i(1) -  \mathscr{O}_i(0)\right]
+\]
 
-## Marco de Resultados Potenciales
+Y a nivel de la población, como
+\[ 
+\tau_{ATE}=\frac{1}{N}\sum_{i=1}^{N} \left[\mathscr{O}_i(1) -  \mathscr{O}_i(0)\right] 
+\]
 
-En el modelo causal de Rubin, se consideran tanto los resultados observados como los contrafactuales (potenciales). Además, se asume que **no hay interferencia entre individuos**, conocido como el **supuesto del valor de tratamiento unitario estable** (en inglés, *stable unit treatment value assumption*, SUTVA):
-$$\mathscr{O}_i(\mathbf{z})=\mathscr{O}_i(z_i)$$
-En este *mundo ideal*, el **efecto promedio del tratamiento** (en inglés, *average treatment effect*, ATE) se estimaría de tal forma que
-$$
-\tau_{ATE} = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(1) - \mathscr{O}_i(0) \right] = \bar{\mathscr{O}}(1) - \bar{\mathscr{O}}(0)
-$$ 
+## Inferencia Causal
 
-## Estimadores
+La asignación de los individuos al grupo de tratamiento y al de control puede representarse mdiante un vector. Sea \(Z = (Z_1, \ldots, Z_{N})^T \in \{0, 1\}^{N}\) el **vector aleatorio de asignación de la intervención**; si la unidad experimental \(i\) recibe el tratamiento, \(Z_i\) es igual a 1, de lo contrario es igual a 0.
 
-Al considerar un experimento aleatorio, donde $N_t$ individuos reciben tratamiento y $N_c=N_v-N_t$ son control, la probabilidad de asignación de tratamiento es $p_z = \left( \frac{N_v}{N_t} \right)^{-1}$.
+Por diseño experimental entenderemos una manera de elegir dicho vector y \(p_z = P(Z = z)\) denotará la **probabilidad de que la asignación de tratamiento \(z\) sea generada por el diseño**.
 
-El estimador insesgado de $\tau_{ATE}$ es
-$$\hat{\tau}_{ATE}(\mathbf{z}) = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \frac{z_i\mathscr{O}_i(1)}{N_t / N_v} - \frac{(1 - z_i) \mathscr{O}_i(0)}{N_c / N_v} \right]$$
-La varianza de este estimador está dada por
-$$Var(\hat{\tau}_{ATE}(\mathbf{Z})) = \frac{S_c^2}{N_c} + \frac{S_t^2}{N_t} + \frac{S_tc^2}{N_v}$$
-donde 
-$$S_c^2 = \frac{1}{N_v - 1} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(1) - \bar{\mathscr{O}}(0) \right]^2 \quad \text{,}$$
-$$S_t^2 = \frac{1}{N_v - 1} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(1) - \bar{\mathscr{O}}(1) \right]^2 \quad \text{y}$$
-$$S_{tc}^2 = \frac{1}{N_v - 1} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(1) - \mathscr{O}_i(0) - \tau_{ATE}\right]^2 $$
-En la práctica, es común utilizar este estimador bajo el supuesto de un efecto de tratamiento constante (con *varianza de los efectos del tratamiento* $S_{tc}^2 = 0$) o derivar estimadores basados en otros supuestos.
+Considerando un experimento completamente aleatorizado, en el cual \(T\) individuos son asignados al grupo de tratamiento, y \(C = N - T\) al de control, se tiene que la probabilidad de que la asignación del tratamiento \(z\) sea elegida entre todas las posibles es igual a
 
-Lastimosamente, **no podemos estimar dicha varianza basándose únicamente en los resultados observados**, ya que no observamos ambos $\mathscr{O}_i(1)$ y $\mathscr{O}_i(0)$ para cualquiera de los individuos.
+\[p_z = \binom{N}{T} ^{-1},\]
+
+Asimismo, se tiene que cada componente $Z_i$ del vector $Z$ es una variable aleatoria sigue una distribución Bernoulli con parámetro $p_{i}=P(Z_i=1)$. Ahora bien, a partir del diseño, podemos determinar la probabilidad de que el individuo $i$ sea seleccionado en el grupo de tratamiento, \(p_{i}\), de la siguiente manera,
+
+\[p_{i} = \binom{N}{T} ^{-1}\binom{N-1}{T-1}=\frac{T}{N},  \forall i \in V\]
+
+y la probabilidad de que \(i\) y \(j\) lo sean  simultáneamente, \(p_{ji}=P(Z_{i}=1, Z_{j}=1)\),
+
+\[p_{ji} = \binom{N}{T} ^{-1}\binom{N-2}{T-2}=\frac{T(T-1)}{N(N-1)},  \forall i \ne j \in V\]
+
+Por tanto, se tiene que
+
+i) \(E(Z_i) = p_{i} = \frac{T}{N}\)
+ii) \(\text{Var}(Z_i) = p_{i}(1-p_{i}) = \frac{TC}{N^2}\)
+iii) \(\text{Cov}(Z_i, Z_j) = p_{ij} - p_i p_j = \frac{T(T-1)}{N(N-1)}-\frac{T^2}{N^2}=\frac{-T(N-T)}{N^2(N-1)}, \quad \forall i \ne j \in V\)
+
+Para obtener un estimador insesgado de \(\tau_{ATE}\), ajustamos el total muestral ponderando por el inverso de la probabilidad de inclusión al grupo de tratamiento \(p_{i}\) y
+
+\[
+\hat{\tau}_{ATE}(z) = \frac{1}{N} \sum_{i=1}^{N} \left[ \frac{z_i \mathscr{O}_i(1)}{p_{i}} - \frac{(1 - z_i) \mathscr{O}_i(0)}{1-p_{i}} \right]
+\]
+
+\[
+\hat{\tau}_{ATE}(z) = \frac{1}{N} \sum_{i=1}^{N} \left[ \frac{z_i \mathscr{O}_i(1)}{T / N} - \frac{(1 - z_i) \mathscr{O}_i(0)}{C / N} \right]
+\]
+
+y su varianza por,
+
+\[
+V(\hat{\tau}_{ATE}(z)) = V( \frac{1}{N} \sum_{i=1}^{N} \left[ \frac{z_i}{p_{i}}\mathscr{O}_i(1) - \frac{(1 - z_i)}{1-p_{i}} \mathscr{O}_i(0) \right] )
+\]
+
+\[
+= V(\frac{1}{N} \sum_{i=1}^{N} \left[ (\frac{\mathscr{O}_i(1)}{p_{i}}+ \frac{\mathscr{O}_i(0)}{1-p_{i}})z_i- \frac{\mathscr{O}_i(0)}{1-p_{i}}  \right])
+\]
+
+\[
+=\frac{1}{N^2}\sum_i \left[ \left( \frac{\mathscr{O}_i(1)}{p_{i}} + \frac{\mathscr{O}_i(0)}{1-p_{i}} \right)^2 V(Z_i) \right] + \sum_{i \ne j} \sum \left[ \left( \frac{\mathscr{O}_i(1)}{p_{i}} + \frac{\mathscr{O}_i(0)}{1-p_{i}} \right) \left( \frac{\mathscr{O}_j(1)}{p_{j}} + \frac{\mathscr{O}_j(0)}{1-p_{i}} \right) \text{Cov}(Z_i, Z_j) \right]
+\]
+
+Finalmente, se obtiene que
+
+$$Var(\hat{\tau}_{ATE}(\mathbf{Z})) = \frac{S_c^2}{C} + \frac{S_t^2}{T} + \frac{S_{tc}^2}{N}$$
+donde
+$$S_c^2 = \frac{1}{N - 1} \sum_{i=1}^{N} \left[ \mathscr{O}_i(1) - \bar{\mathscr{O}}(0) \right]^2 \quad \text{,}$$
+$$S_t^2 = \frac{1}{N - 1} \sum_{i=1}^{N} \left[ \mathscr{O}_i(1) - \bar{\mathscr{O}}(1) \right]^2 \quad \text{y}$$
+$$S_{tc}^2 = \frac{1}{N - 1} \sum_{i=1}^{N} \left[ \mathscr{O}_i(1) - \mathscr{O}_i(0) - \tau_{ATE}\right]^2 $$
+
+En la práctica no es posible estimar $S_{tc}^2$, puesto que no observamos simultáneamente $\mathscr{O}_i(1)$ y $\mathscr{O}_i(0)$. Bajo el supuesto de efectos unitarios constantes ($\mathscr{O}_i(1) - \mathscr{O}_i(0) = \tau_{ATE}$), se puede obtener un estimador insesgado a partir de las varianzas muestrales.
 
 # Interferencia de Red
 
 En el contexto de las redes, se puede esperar que haya **interferencia**, es decir,
 $$\mathscr{O}_i(\mathbf{Z}) \neq \mathscr{O}_i(Z_i)$$
 
+Bajo este nuevo escenario, la respuesta del individuo $i$ depende *de la exposición completa de dicho individuo al vector de asignación de tratamientos* $\mathbf{z}$, en lugar de sólo el producto del tratamiento $z_i$ al cual fue asignado ese individuo (como sucede en SUTVA).
+
 ## Ejemplo: Red de Huelga
 
 La nueva dirección en una planta forestal propuso cambios en el paquete de compensación para los trabajadores. Inicialmente, dos negociadores sindicales explicaron los cambios a los demás, pero no fueron aceptados, resultando en una huelga. Un consultor externo analizó la red de comunicación entre 24 trabajadores relevantes y se explicaron los cambios a dos de ellos, quienes discutieron con sus colegas. En dos días, los trabajadores pidieron reabrir las negociaciones y la huelga se resolvió.
 
-La red final tenía 24 vértices y 38 aristas. Una arista entre dos vértices indica que los empleados se comunicaron con una frecuencia mínima suficiente sobre la huelga.
+La red de trabajadores consiste en un grafo simple no dirigido y consta de una única componente conectada. La red final tenía 24 vértices y 38 aristas. Una arista entre dos vértices indica que los empleados se comunicaron con una frecuencia mínima suficiente sobre la huelga.
 
-```{r, fig.align='center'}
+```{r, results = 'hold'}
 # Librerías
 suppressMessages(suppressWarnings(library(igraph)))
 suppressMessages(suppressWarnings(library(sand)))
 
 # Cargar datos
 data(strike)
+upgrade_graph(strike)
+
+# Resumen
 summary(strike)
 ```
 Hay tres subgrupos presentes en la red, codificados por el atributo nodal $\verb|race|$:
@@ -114,26 +170,26 @@ Hay tres subgrupos presentes en la red, codificados por el atributo nodal $\verb
 table(V(strike)$race)
 ```
 
-La intervención para explorar la interferencia de la red es la estrategia de explicar cambios en el paquete de compensación para influir en el comportamiento organizacional, similar a una red de campaña de persuasión.
+El experimento consiste en explicar los cambios en las condiciones de pago para influir en el comportamiento organizacional. En la siguiente figura se presentan las relaciones al interior del sindicato. La pertenencia étnica y el ciclo de vida se indican según la forma de los vértices. Los individuos seleccionados para la intervención son coloreados en rojo. Los dos representantes sindicales, negociadores en el intento de comunicación inicial, están marcados con un asterisco (es decir, Sam y Wendle).
 
 ```{r, fig.align='center'}
 # Darle forma de triángulo a los vértices
-mytriangle <- function(coords, v = NULL, params) {
+mytriangle <- function(coords, v=NULL, params) {
   vertex.color <- params("vertex", "color")
   if (length(vertex.color) != 1 && !is.null(v)) {
     vertex.color <- vertex.color[v]
   }
+  
   vertex.size <- 1/200 * params("vertex", "size")
   if (length(vertex.size) != 1 && !is.null(v)) {
-  vertex.size <- vertex.size[v]
+    vertex.size <- vertex.size[v]
   }
-
-  symbols(x = coords[,1], y = coords[,2], bg = vertex.color,
-  stars = cbind(vertex.size, vertex.size, vertex.size),
-  add = TRUE, inches = FALSE)
+  symbols(x=coords[,1], y=coords[,2], bg=vertex.color,  
+          stars=cbind(vertex.size, vertex.size, vertex.size),
+          add=TRUE, inches=FALSE)
 }
-
-add_shape("triangle", clip = shapes("circle")$clip, plot = mytriangle)
+add_shape("triangle", clip=shapes("circle")$clip,
+          plot=mytriangle)
 
 # Indicar "race" a través de la forma del vértice
 V(strike)[V(strike)$race=="YS"]$shape <- "circle"
@@ -144,37 +200,87 @@ V(strike)[V(strike)$race=="OE"]$shape <- "triangle"
 nv <- vcount(strike)
 z <- numeric(nv)
 z[c(5,15,21,22)] <- 1
-V(strike)$color <- rep("white", nv)
+V(strike)$color <- rep("white",nv)
+V(strike)[V(strike)$race=="YS"]$color <- "#19D339"
+V(strike)[V(strike)$race=="YE"]$color <- adjustcolor("royalblue", 0.7)
+V(strike)[V(strike)$race=="OE"]$color <- "navy"
 V(strike)[z==1]$color <- "red3"
 ```
 
-```{r, fig.align='center'}
-V(strike)[z==1]$names
-```
-```{r, fig.height = 8, fig.width = 8, fig.align = 'center'}
-# Visualización
+```{r, fig.height = 8, fig.width = 10, fig.align = 'center'}
+
+#Visualización
+par(mar = c(0.5, 1, 1, 0.5), mgp = c(1.2, 0.3, 0), mfrow = c(1, 1))
 set.seed(42)
-my.dist <- c(rep(1.8, 4), rep(2.2, 9), rep(2, 11))
-l <- layout_with_kk(strike)
-plot(strike,layout = l, vertex.label = V(strike)$names,
-     vertex.label.degree = -pi/3,
-     vertex.label.dist = my.dist)
-
-# Leyendas
-legend("topright", legend = unique(V(strike)$race), pt.bg = "white",
-       pch = c(21, 22, NA), bty = "n", col = "#777777", pt.cex = 1.5, pt.lwd = 2)
-points(x = rep(1.10, 1), y = rep(0.93, 1), pch = 24, bg = "white", col = "#777777", cex = 1.5)
-
-legend("topright", inset = c(0, 0.1), legend = "Negociadores", pt.bg = "red3",
-       pch = 21, bty = "n", col = "#777777",
-       pt.cex = 1.5, pt.lwd = 2)
-
-# Agregar pie de página
-mtext("Los dos representantes sindicales (primera socialización de la estrategia) aparecen con asterisco (*)", side = 1, line = 3, adj = 1, cex = 0.8)
+my.dist <- c(rep(1.8,4),rep(2.2,9),rep(2,11))
+l <- layout_with_kk(strike) # Kamada-Kawai
+plot(strike,layout=l,vertex.label=V(strike)$names,
+     vertex.label.degree=-pi/3,
+     vertex.label.dist=my.dist,
+     vertex.label.color="black")
+legend("topleft",
+       legend = c(paste("Orden = ", vcount(strike), sep=""),
+                  paste("Tamaño = ", ecount(strike), sep=""),
+                  paste("Densidad = ", round(edge_density(strike), 2), sep=""),
+                  paste("Grado promedio = ", round(mean(degree(strike)), 2), sep=""),
+                  paste("Diámetro = ", round(diameter(strike, directed = FALSE, unconnected = TRUE), 2), sep=""),
+                  paste("Distancia promedio = ", round(mean_distance(strike, directed = FALSE, unconnected = TRUE), 2), sep=""),
+                  paste("Triángulos = ", sum(count_triangles(strike))/2, sep=""),
+                  paste("Transitividad = ", round(transitivity(strike, type="global"), 2), sep=""),
+                  paste("Num. clique = ", clique_num(graph = strike), sep="")),
+       bty = "n", cex = 0.7, text.width = 2)
+legend("bottomright",
+       legend = c("adulto, anglohablante",
+                  "joven, anglohablante", 
+                  "joven, hispanohablante",
+                  "tratados"),
+       col = c("navy", adjustcolor("royalblue", 0.7), "#19D339", "red3"),
+       pch = 16,  
+       pt.cex = 1.5,  
+       bty = "n",  
+       title = "",
+       cex = 0.7)
 ```
 
-Sam y Wendle, los representantes sindicales, parecen alejados del resto de trabajadores, mientras que Bob y Norm, los empleados que se unieron después, son más centrales en la red. Esto se confirma al examinar sus centralidades de intermediación (*betweenness*) y cercanía (*closeness*).
+En primer lugar, se pueden observar las siguientes características sobre la red:
 
+* Los 38 enlaces observados equivalen al 14% de las aristas posibles (densidad = 0.14).
+
+* En promedio, cada sindicalista se relaciona con 3.17 trabajadores adicionales.
+
+* El 88% de los nodos tienen 4 o menos enlaces.
+
+* En promedio, se necesita recorrer un camino de casi 3 pasos para ir de un nodo a otro en la red (distancia media = 2.99).
+
+* El par de nodos más alejados entre sí se encuentran a 6 aristas de distancia (diámetro = 6).
+
+```{r results = 'hold'}
+# k-conectividad
+print("k-conectividad")
+vertex_connectivity(strike)
+
+# Puntos de articulación
+print("Puntos de articulación")
+V(strike)[articulation_points(strike)]$names
+```
+
+Al analizar la conectividad del grafo, se puede constatar que basta con remover un solo vértice bien elegido para dividir la componente gigante en subgrafos más pequeños. Por lo tanto, decimos que la red del sindicato es 1-conectada. Esto implica que el flujo de información entre los trabajadores puede ser interrumpido al eliminar al menos uno de los nodos de articulación de la red.
+
+```{r}
+centrality_table <- data.frame(
+  `x1` = V(strike)[order(degree(strike, normalized = TRUE), decreasing = TRUE)[1:5]]$names,
+  `x2`= V(strike)[order(closeness(strike, normalized = TRUE), decreasing = TRUE)[1:5]]$names,
+  `x3` = V(strike)[order(betweenness(strike, normalized = TRUE), decreasing = TRUE)[1:5]]$names,
+  `x4` = V(strike)[order(eigen_centrality(strike, directed = FALSE, scale = TRUE)$vector, decreasing = TRUE)[1:5]]$names
+)
+
+colnames(centrality_table) <- c( "Grado", "Cercanía", "Intermediación", "Vector propio")
+
+# Mostrar la tabla
+kable(centrality_table, caption = "Nodos destacados, grafo Strike") %>%
+  kable_styling(full_width = FALSE, position = "center") %>%
+  add_header_above(c("Medidas de Centralidad, Top 5" = 4))
+```
 ```{r results = 'hold'}
 print("betweenness")
 V(strike)[z==1]$names
@@ -185,8 +291,42 @@ print("closeness")
 V(strike)[z==1]$names
 rank(-closeness(strike))[z==1]
 ```
+Bajo las métricas estándar, los individuos más centrales de la red son Norm, Bob y John, a la vez que Frank, Xavier y Wendle* son los individuos más periféricos. La centralidad de Bob y Norm justifica que hayan sido elegidos luego de analizar la estructura de la red, para propagar la información hacia más sectores. Al contrario, Sam y Wendle, los representantes sindicales, parecen alejados del resto de trabajadores.
 
-Aunque Bob y Norm ocupan el primer y segundo lugar según cualquier medida, Sam se encuentra un poco detrás de ellos, y Wendle está casi en el último lugar entre los 24 empleados de la red. Esta discrepancia tiene implicaciones directas no solo en la medida en que se difunden los mensajes deseados en la red, sino también en nuestra capacidad para estimar esta difusión.
+```{r results = 'hold'}
+
+# Comunidades- fast_greedy 
+par(mar = c(0.5, 1, 1, 0.5), mgp = c(1.2, 0.3, 0), mfrow = c(1, 1))
+set.seed(42)
+kc <- cluster_fast_greedy(strike)
+my.dist <- c(rep(1.8,4),rep(2.2,9),rep(2,11))
+l <- layout_with_kk(strike) # Kamada-Kawai
+plot(kc,strike,layout=l,vertex.label=V(strike)$names,
+     vertex.label.degree=-pi/3,
+     vertex.label.dist=my.dist,
+     vertex.label.color="black")
+legend("bottomright", legend = unique(V(strike)$race), pt.bg = "white",
+       pch = c(21, 22, 24), bty = "n", col = "#777777", pt.cex = 1.5, pt.lwd = 2)
+```
+
+```{r results = 'hold'}
+print("Nodos en el clique máximo")
+V(strike)[maximal.cliques(strike)[[which.max(sapply(maximal.cliques(strike), length))]]]$names
+```
+
+En relación con la cohesión del grafo, se tiene que:
+
+* Aunque no existen regiones aisladas en la red, las regiones de máxima conectividad son pequeñas.
+
+* El subgrupo más altamente conectado es  relativamente pequeño, siendo el clique máximo de 4 vértices.
+
+* El clique máximo corresponde a la comunidad de habla hispana.
+
+Al utilizar tres algortimos para la segmentación del grafo: agrupación jerárquica (fast-greedy), particionamiento espectral y el algoritmo de Girvan-Newman (edge-betweenness), se evidenció que las cuatro comunidades detectadas están claramente delimitadas, siendo así que:
+
+* Los dos subgrupos más grandes reúnen al 70% de los nodos, con 10 y 7 vértices respectivamente.
+
+* Los dos subgrupos más pequeños están formados por 4 o menos individuos cada uno.
 
 # Inferencia Causal bajo Interferencia de Red
 
@@ -200,7 +340,7 @@ Al buscar extender el marco clásico de resultados potenciales a experimentos en
 
 Ahora la respuesta del individuo $i$ se entiende como **el resultado de la exposición completa de dicho individuo al vector de asignación de tratamientos** $\mathbf{z}$, en lugar de sólo el producto del tratamiento $z_i$ al cual fue asignado ese individuo (como sucede en SUTVA).
 
-El problema es que habrá $2^{N_v}$ posibles exposiciones por cada uno de los $N_v$ individuos, haciendo imposible el inferencia causal.
+El problema es que habrá $2^{N}$ posibles exposiciones por cada uno de los $N$ individuos, haciendo imposible el inferencia causal.
 
 ### Mapeos de Exposición
 
@@ -215,7 +355,7 @@ donde
 
 * $\mathbf{z}$ es el vector de asignación de tratamientos.
 
-* $\mathbf{x}_i$ es el vector de información adicional del individuo $i$.
+* $\mathbf{x}_i$ es el vector de la i-esíma columna de la matriz de adyacencia.
 
 * $f$ es la función del mapeo de exposición.
 
@@ -229,8 +369,30 @@ c_{00}(\text{No Exposición}), & (1 - z_i)\mathit{I}_{ \{\mathbf{z}^T\mathbf{x}_
 \end{cases}$$
 donde $\mathbf{z}^T\mathbf{x}_i$ es igual al número de vecinos directamente expuestos del individuo $i$.
 
-### Ejemplo: Red de Huelga
+### Efectos del Tratamiento bajo Interferencia de Red
 
+La adición de la interferencia al marco de resultados potenciales requiere refinar la noción de efectos causales. El efecto promedio del tratamiento (ATE) bajo interferencia de la red se generaliza como:
+$$
+\tau_{ATE} = \frac{1}{N} \sum_{i=1}^{N} \left[ \mathscr{O}_i(\mathbf{1}) - \mathscr{O}_i(\mathbf{0}) \right] = \bar{\mathscr{O}}(\mathbf{1}) - \bar{\mathscr{O}}(\mathbf{0})
+$$ 
+donde $\mathbf{1}$ y $\mathbf{0}$ son ahora vectores de longitud $N$ de unos y ceros, respectivamente. Compara resultados potenciales bajo tratamiento completo ($\mathbf{z=1}$) versus control total ($\mathbf{z=0}$). 
+
+El problema es que este parámetro representa una **agregación de ambos efectos (directos e indirectos) de la asignación del tratamiento** y, en contextos donde se buscan efectos "puros" del tratamiento, la interferencia puede ser una molestia.
+
+Bajo el marco del mapeo de exposición de Aronow y Samii, usamos la diferencia $\mathscr{O}_i(c_k) - \mathscr{O}_i(c_l)$ para representar el efecto causal de la condición de exposición $k$ versus la $l$ para el individuo $i$. Entonces, el **efecto causal promedio de exposición a la condición $k$ vesus $l$** se define como:
+$$
+\tau(c_k, c_l) = \frac{1}{N} \sum_{i=1}^{N} \left[ \mathscr{O}_i(c_k) - \mathscr{O}_i(c_l) \right] = \bar{\mathscr{O}}(c_k) - \bar{\mathscr{O}}(c_l)
+$$ 
+
+Entre los niveles de exposición posibles: $c_{11}, c_{10}, c_{01}, c_{00}$, podemos definir los siguientes contrastes:
+
+* $\tau(c_{01}, c_{00})$ que captura el efecto general indirecto del tratamiento.
+
+* $\tau(c_{10}, c_{00})$ que captura el efecto general directo del tratamiento.
+
+* $\tau(c_{11}, c_{00})$ que captura el efecto total del tratamiento.
+
+### Ejemplo: Red de Huelga
 Para poder identificar la exposición de cada individuo bajo el modelo de exposición propuesto por Aronow y Samii, se debe calcular el indicador de vecinos directamente expuestos:
 
 ```{r results = 'hold'}
@@ -289,31 +451,6 @@ legend("topright", legend = parse(text = unique(V(strike)$exposure)),
        pt.bg = exposure_colors, bty = "n", pch = 21, col = "#777777")
 ```
 
-## Efectos Causales bajo Interferencia de Red
-
-La adición de la interferencia al marco de resultados potenciales requiere refinar la noción de efectos causales. El efecto promedio del tratamiento (ATE) bajo interferencia de la red se generaliza como:
-$$
-\tau_{ATE} = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(\mathbf{1}) - \mathscr{O}_i(\mathbf{0}) \right] = \bar{\mathscr{O}}(\mathbf{1}) - \bar{\mathscr{O}}(\mathbf{0})
-$$ 
-donde $\mathbf{1}$ y $\mathbf{0}$ son ahora vectores de longitud $N_v$ de unos y ceros, respectivamente. Compara resultados potenciales bajo tratamiento completo ($\mathbf{z=1}$) versus control total ($\mathbf{z=0}$). 
-
-El problema es que este parámetro representa una **agregación de ambos efectos (directos e indirectos) de la asignación del tratamiento** y, en contextos donde se buscan efectos "puros" del tratamiento, la interferencia puede ser una molestia.
-
-Bajo el marco del mapeo de exposición de Aronow y Samii, usamos la diferencia $\mathscr{O}_i(c_k) - \mathscr{O}_i(c_l)$ para representar el efecto causal de la condición de exposición $k$ versus la $l$ para el individuo $i$. Entonces, el **efecto causal promedio de exposición a la condición $k$ vesus $l$** se define como:
-$$
-\tau(c_k, c_l) = \frac{1}{N_v} \sum_{i=1}^{N_v} \left[ \mathscr{O}_i(c_k) - \mathscr{O}_i(c_l) \right] = \bar{\mathscr{O}}(c_k) - \bar{\mathscr{O}}(c_l)
-$$ 
-
-### Ejemplo: Red de Huelga
-
-Considerando de nuevo la red de huelga, tenemos cuatro exposiciones: $c_{11}, c_{10}, c_{01}, c_{00}$. Un conjunto natural de contrastes son:
-
-* $\tau(c_{01}, c_{00})$ que captura el efecto general indirecto del tratamiento.
-
-* $\tau(c_{10}, c_{00})$ que captura el efecto general directo del tratamiento.
-
-* $\tau(c_{11}, c_{00})$ que captura el efecto total del tratamiento.
-
 Supongamos que la reacción de los empleados se califica en una escala de 1 (no receptivo) a 10 (completamente receptivo), registrando que la receptividad incrementa según la exposición. Para cada individuo $i \in V$, se tiene que:
 
 * $\mathscr{O}_i(c_{00}) = 1$: mínima receptividad sin exposición.
@@ -335,7 +472,7 @@ O.c11 <- 10.0
 c(O.c01, O.c10, O.c11) - O.c00
 ```
 
-## Diseño de Experimentos en Redes
+## Efectos Causales bajo Interferencia de Red
 
 La elección de la asignación de tratamientos es un elemento clave del diseño experimental de redes. En un modelo clásico de inferencia causal, la asignación se captura a través de la distribución $p_{\mathbf{z}}$, es decir, la probabilidad de asignación del tratamiento $\mathbf{z}$.
 
@@ -359,52 +496,74 @@ Supongamos que hay $\mathit{M}$ posibles asignaciones de tratamiento $\mathbf{z}
   
   \vdots & \vdots & \ddots & \vdots \\
   
-  \mathit{I}_{\{f(\mathbf{z}_1, \mathbf{x}_{N_v}) = c_k\}} &
-  \mathit{I}_{\{f(\mathbf{z}_2, \mathbf{x}_{N_v}) = c_k\}} & \cdots &
-  \mathit{I}_{\{f(\mathbf{z}_{\mathit{M}}, \mathbf{x}_{N_v}) = c_k\}}
+  \mathit{I}_{\{f(\mathbf{z}_1, \mathbf{x}_{N}) = c_k\}} &
+  \mathit{I}_{\{f(\mathbf{z}_2, \mathbf{x}_{N}) = c_k\}} & \cdots &
+  \mathit{I}_{\{f(\mathbf{z}_{\mathit{M}}, \mathbf{x}_{N}) = c_k\}}
 \end{bmatrix}
 \end{equation}
 Además, sea $\mathbf{P} = diag(p_{z_1},\ldots, p_{z_\mathit{M}})$. 
 
-Entonces, en la primera matriz simétrica $N_v \times N_v$, podemos recuperar para una condición de exposición fija $c_k$, tanto la probabilidad de exposición individual $p_{i}^{e}(c_k)$ como las probabilidades de exposición conjunta $p_{ij}^{e}(c_k)$, para todos los individuos $i, j = 1,\ldots,N_v$:
+Entonces, en la primera matriz simétrica $N \times N$, podemos recuperar para una condición de exposición fija $c_k$, tanto la probabilidad de exposición individual $p_{i}^{e}(c_k)$ como las probabilidades de exposición conjunta $p_{ij}^{e}(c_k)$, para todos los individuos $i, j = 1,\ldots,N$:
 \begin{equation}
 \mathit{I}_k \mathbf{P} \mathit{I}_{k}^{T} =
 \begin{bmatrix}
 
-  p_{1}^{e}(c_k) & p_{12}^{e}(c_k) & \cdots & p_{1N_v}^{e}(c_k) \\
+  p_{1}^{e}(c_k) & p_{12}^{e}(c_k) & \cdots & p_{1N}^{e}(c_k) \\
   
-  p_{21}^{e}(c_k) & p_{2}^{e}(c_k) & \cdots & p_{2N_v}^{e}(c_k) \\
+  p_{21}^{e}(c_k) & p_{2}^{e}(c_k) & \cdots & p_{2N}^{e}(c_k) \\
   
   \vdots & \vdots & \ddots & \vdots \\
   
-  p_{N_v1}^{e}(c_k) & p_{N_v2}^{e}(c_k) & \cdots & p_{N_v}^{e}(c_k)
+  p_{N1}^{e}(c_k) & p_{N2}^{e}(c_k) & \cdots & p_{N}^{e}(c_k)
 \end{bmatrix}
 \end{equation}
-y la segunda matriz no simétrica $N_v \times N_v$ nos permite recuperar las probabilidades de exposición conjunta $p_{ij}^{e}(c_k, c_l)$ para todos los pares de individuos $i$ y $j$, para condiciones de exposición fijas $c_k$ y $c_l$:
+y la segunda matriz no simétrica $N \times N$ nos permite recuperar las probabilidades de exposición conjunta $p_{ij}^{e}(c_k, c_l)$ para todos los pares de individuos $i$ y $j$, para condiciones de exposición fijas $c_k$ y $c_l$:
 \begin{equation}
 \mathit{I}_k \mathbf{P} \mathit{I}_{l}^{T} =
 \begin{bmatrix}
 
-  0 & p_{12}^{e}(c_k, c_l) & \cdots & p_{1N_v}^{e}(c_k, c_l) \\
+  0 & p_{12}^{e}(c_k, c_l) & \cdots & p_{1N}^{e}(c_k, c_l) \\
   
-  p_{21}^{e}(c_k, c_l) & 0 & \cdots & p_{2N_v}^{e}(c_k, c_l) \\
+  p_{21}^{e}(c_k, c_l) & 0 & \cdots & p_{2N}^{e}(c_k, c_l) \\
   
   \vdots & \vdots & \ddots & \vdots \\
   
-  p_{N_v1}^{e}(c_k, c_l) & p_{N_v2}^{e}(c_k, c_l) & \cdots & 0
+  p_{N1}^{e}(c_k, c_l) & p_{N2}^{e}(c_k, c_l) & \cdots & 0
 \end{bmatrix}
 \end{equation}
 Note que la diagonal está compuesta por ceros debido al supuesto de que los individuos solo pueden caer en una categoría de exposición.
 
 El problema es que en la práctica, es probable que **las dos matrices sean computacionalmente inviables para calcular directamente** $p_{i}^{e}(c_k)$, $p_{ij}^{e}(c_k)$ y $p_{ij}^{e}(c_k, c_l)$.
 
-### Simulación de Monte Carlo
+En el marco del mapeo de exposición, las estimaciones de interés son:
+
+1. $\bar{\mathscr{O}}(c_k)$ siendo la resultado promedio potencial bajo la condición de exposición $c_k$ para $k = 1,\ldots,K$.
+
+2. $\tau(c_k, c_l) = \bar{\mathscr{O}}(c_k) - \bar{\mathscr{O}}(c_l)$ siendo el efecto causal promedio de la condición de exposición $c_k$ versus $c_l$.
+
+Note que los $\bar{\mathscr{O}}(c_k)$ corresponderán a una **muestra de probabilidades desiguales sin reemplazo de resultados potenciales** bajo una condición dada, y las estimaciones del 2 son todas funciones lineales simples de las del 1.
+
+Suponiendo que conocemos o podemos aproximarnos con precisión a las probabilidades de exposición relevantes, la inferencia se realiza siguiendo el método de Horvitz y Thompson.
+
+Este estimador insesgado y bien definido para $\bar{\mathscr{O}}(c_k)$, considera el muestro de probabilidades desiguales mediante el uso de ponderación de probabilidad inversa.
+
+$$\hat{\bar{\mathscr{O}}}(c_k) = \frac{1}{N} \sum_{i=1}^{N} \mathit{I}_{ \{ f(\mathbf{z}, \mathbf{x}_i) = c_k \} } \frac{\mathscr{O}_i(c_k)}{p_i^e(c_k)}$$
+
+A su vez, $\hat{\tau}(c_k, c_l) = \hat{\bar{\mathscr{O}}}(c_k) - \hat{\bar{\mathscr{O}}}(c_l)$ es un estimador insesgado para $\tau(c_k, c_l)$. 
+
+Las varianzas de estos estimadores son, respectivamente, 
+
+$$Var[\hat{\bar{\mathscr{O}}}(c_k)] = \frac{1}{N^2} 
+\Biggl\{ \sum_{i=1}^{N} p_i^e(c_k) [1-p_i^e(c_k)] \biggl[ \frac{\mathscr{O}_i(c_k)}{p_i^e(c_k)} \biggl]^2 + 
+\sum_{i=1}^{N}\sum_{i\neq1} [p_{ij}^e(c_k) - p_i^e(c_k)p_j^e(c_k)]  \frac{\mathscr{O}_i(c_k)}{p_i^e(c_k)} \frac{\mathscr{O}_j(c_k)}{p_j^e(c_k)} 
+\Biggl\}$$
+$$Var(\hat{\tau}(c_k, c_l)) = Var[\hat{\bar{\mathscr{O}}}(c_k)] + Var[\hat{\bar{\mathscr{O}}}(c_l)] - 2Cov[\hat{\bar{\mathscr{O}}}(c_k), \hat{\bar{\mathscr{O}}}(c_l)]$$
+
+### Ejemplo: Red de Huelga
 
 Se pueden usar simulaciones de Monte Carlo para aproximar el valor de las probabilidades con precisión arbitraria.
 
-Simulando $n$ valores de $p_{\mathbf{z}}$, para cada una de las $K$ condiciones de exposición podemos entonces formar $K$ matrices $\hat{\mathit{I}}_k$ de dimensión $N_v \times n$.
-
-### Ejemplo: Red de Huelga
+Simulando $n$ valores de $p_{\mathbf{z}}$, para cada una de las $K$ condiciones de exposición podemos entonces formar $K$ matrices $\hat{\mathit{I}}_k$ de dimensión $N \times n$.
 
 Supongamos que en la red de huelga, se aplicó "tratamiento" a cuatro empleados elegidos uniformemente al azar para que desempeñen el rol de negociadores.
 
@@ -483,36 +642,6 @@ plot_Ik(I01.01, expression("Exposición Indirecta"~(c["01"])))
 plot_Ik(I00.00, expression("No Exposición"~(c["00"])))
 ```
 Con solo cuatro de 24 actores tratados como negociadores, solo las probabilidades de exposición indirecta y sin exposición tienen valores altos. Se observa que en el subgrupo de empleados jóvenes de habla hispana hay alta probabilidad de no exposición.
-
-## Inferencia para Efectos Causales
-
-En el marco del mapeo de exposición, las estimaciones de interés son:
-
-1. $\bar{\mathscr{O}}(c_k)$ siendo la resultado promedio potencial bajo la condición de exposición $c_k$ para $k = 1,\ldots,K$.
-
-2. $\tau(c_k, c_l) = \bar{\mathscr{O}}(c_k) - \bar{\mathscr{O}}(c_l)$ siendo el efecto causal promedio de la condición de exposición $c_k$ versus $c_l$.
-
-Note que los $\bar{\mathscr{O}}(c_k)$ corresponderán a una **muestra de probabilidades desiguales sin reemplazo de resultados potenciales** bajo una condición dada, y las estimaciones del 2 son todas funciones lineales simples de las del 1.
-
-### Método de Horvitz y Thompson
-
-Suponiendo que conocemos o podemos aproximarnos con precisión a las probabilidades de exposición relevantes, la inferencia se realiza siguiendo el método de Horvitz y Thompson.
-
-Este estimador insesgado y bien definido para $\bar{\mathscr{O}}(c_k)$, considera el muestro de probabilidades desiguales mediante el uso de ponderación de probabilidad inversa.
-
-$$\hat{\bar{\mathscr{O}}}(c_k) = \frac{1}{N_v} \sum_{i=1}^{N_v} \mathit{I}_{ \{ f(\mathbf{z}, \mathbf{x}_i) = c_k \} } \frac{\mathscr{O}_i(c_k)}{p_i^e(c_k)}$$
-
-A su vez, $\hat{\tau}(c_k, c_l) = \hat{\bar{\mathscr{O}}}(c_k) - \hat{\bar{\mathscr{O}}}(c_l)$ es un estimador insesgado para $\tau(c_k, c_l)$. 
-
-Las varianzas de estos estimadores son, respectivamente, 
-
-$$Var[\hat{\bar{\mathscr{O}}}(c_k)] = \frac{1}{N_v^2} 
-\Biggl\{ \sum_{i=1}^{N_v} p_i^e(c_k) [1-p_i^e(c_k)] \biggl[ \frac{\mathscr{O}_i(c_k)}{p_i^e(c_k)} \biggl]^2 + 
-\sum_{i=1}^{N_v}\sum_{i\neq1} [p_{ij}^e(c_k) - p_i^e(c_k)p_j^e(c_k)]  \frac{\mathscr{O}_i(c_k)}{p_i^e(c_k)} \frac{\mathscr{O}_j(c_k)}{p_j^e(c_k)} 
-\Biggl\}$$
-$$Var(\hat{\tau}(c_k, c_l)) = Var[\hat{\bar{\mathscr{O}}}(c_k)] + Var[\hat{\bar{\mathscr{O}}}(c_l)] - 2Cov[\hat{\bar{\mathscr{O}}}(c_k), \hat{\bar{\mathscr{O}}}(c_l)]$$
-
-### Ejemplo: Red de Huelga
 
 Al suponer que los cuatro representantes de la red de huelga fueron elegidos al azar, las estimaciones de los efectos causales promedio $\tau(c_{11}, c_{00})$, $\tau(c_{10}, c_{00})$ y $\tau(c_{01}, c_{00})$ se obtienen a continuación.
 
