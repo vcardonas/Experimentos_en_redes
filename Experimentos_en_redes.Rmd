@@ -42,20 +42,23 @@ Supongamos que queremos evaluar la efectividad de un tratamiento en un conjunto 
 El modelo de inferencia causal aborda este problema al **incorporar en la medición del impacto la idea de todos los resultados posibles bajo el diseño experimental**, es decir, incluyendo tanto los resultados observados como los contrafactuales (potenciales).
 
 ```{r, echo=FALSE}
-# Create the data frame
+library(knitr)
+library(kableExtra)
+
+# Crear el data frame
 df <- data.frame(
-  Individual = c(1, 2),
-  `Zi = 0` = c("O1(0)", "O2(0)"),
-  `Zi = 1` = c("O1(1)", "O2(1)"),
-  `Zi = 0.` = c("O1(0)", "?"),
-  `Zi = 1.` = c("?", "O2(1)")
+  Individuo = c(1, 2),
+  `Z_i = 0` = c("$\\mathscr{O}_1(0)$", "$\\mathscr{O}_2(0)$"),
+  `Z_i = 1` = c("$\\mathscr{O}_1(1)$", "$\\mathscr{O}_2(1)$"),
+  `Z_i = 0.` = c("$\\mathscr{O}_1(0)$", "$?$"),
+  `Z_i = 1.` = c("$?$", "$\\mathscr{O}_2(1)$")
 )
 
-# Rename the columns
-colnames(df) <- c("Individuo", "Zi = 0", "Zi = 1", "Zi = 0", "Zi = 1")
+# Renombrar las columnas
+colnames(df) <- c("Individuo", "$Z_i = 0$", "$Z_i = 1$", "$Z_i = 0$", "$Z_i = 1$")
 
-# Create the table
-kable(df, caption = "Resultados Potenciales") %>%
+# Crear la tabla con formato LaTeX
+kable(df, caption = "Resultados Potenciales", escape = FALSE) %>%
   kable_styling(full_width = FALSE, position = "center") %>%
   add_header_above(c(" ", "Resultados\nposibles" = 2, "Resultados\nobservados" = 2))
 ```
@@ -501,9 +504,8 @@ Supongamos que hay $\mathit{M}$ posibles asignaciones de tratamiento $\mathbf{z}
   \mathit{I}_{\{f(\mathbf{z}_{\mathit{M}}, \mathbf{x}_{N}) = c_k\}}
 \end{bmatrix}
 \end{equation}
-Además, sea $\mathbf{P} = diag(p_{z_1},\ldots, p_{z_\mathit{M}})$. 
 
-Entonces, en la primera matriz simétrica $N \times N$, podemos recuperar para una condición de exposición fija $c_k$, tanto la probabilidad de exposición individual $p_{i}^{e}(c_k)$ como las probabilidades de exposición conjunta $p_{ij}^{e}(c_k)$, para todos los individuos $i, j = 1,\ldots,N$:
+Además, sea $\mathbf{P} = diag(p_{z_1},\ldots, p_{z_\mathit{M}})$. Entonces, en la primera matriz simétrica $N \times N$, podemos recuperar para una condición de exposición fija $c_k$, tanto la probabilidad de exposición individual $p_{i}^{e}(c_k)$ como las probabilidades de exposición conjunta $p_{ij}^{e}(c_k)$, para todos los individuos $i, j = 1,\ldots,N$:
 \begin{equation}
 \mathit{I}_k \mathbf{P} \mathit{I}_{k}^{T} =
 \begin{bmatrix}
@@ -724,4 +726,89 @@ Vemos que la diferencia entre el valor esperado y los estimadores de los tres ef
 # Referencias
 
 Kolaczyk, E. D., & Csárdi, G. (2014). *Statistical analysis of network data with R* (Vol. 65). New York: Springer. Chapter 10.
+
+
+# Anexo
+
+\[ 
+V(\hat{\tau}_{ATE}(z)) = \frac{1}{N^2}V( \sum_{i=1}^{N} \left[ \frac{z_i}{\pi_{i}}y_{i1} - \frac{(1 - z_i)}{1-\pi_{i}} y_{i0} \right] )
+\]
+\[ 
+= \frac{1}{N^2}V( \sum_{i=1}^{N} \left[ (\frac{y_{i1}}{\pi_{i}}+ \frac{y_{i0}}{1-\pi_{i}})z_i- \frac{y_{i0}}{1-\pi_{i}}  \right] )
+\]
+Dado que bajo un diseño experimental completamente aleatorizado la probabilidad de asignación de todas los individuos es constante, se tiene que
+\[
+=\frac{1}{N^2}\sum_i \left[ \left( \frac{y_{i1}}{\pi} + \frac{y_{i0}}{1-\pi} \right)^2 V(Z_i) \right] + \sum_{i \ne j} \sum \left[ \left( \frac{y_{i1}}{\pi} + \frac{y_{i0}}{1-\pi} \right) \left( \frac{y_{j1}}{\pi} + \frac{y_{j0}}{1-\pi} \right) \text{Cov}(Z_i, Z_j) \right]
+\]
+\[
+=\frac{1}{N^2} \sum_{i} \sum_{j} \left[ \left( \frac{y_{i1}}{\pi} + \frac{y_{i0}}{1-\pi} \right) \left( \frac{y_{j1}}{\pi} + \frac{y_{j0}}{1-\pi} \right) \text{Cov}(Z_i, Z_j) \right]
+\]
+Al denotar la covarianza \(\text{Cov}(Z_i, Z_j)\) como \(\Delta_{ij}\) y al aplicar la definición de Yates & Grundy de la varianza del estimador de Horvitz-Thompson, se obtiene
+\[
+=\frac{1}{N^2}\left(-\frac{1}{2} \sum_{i} \sum_{j} \Delta_{ij} \left[ \left( \frac{y_{i1}}{\pi} + \frac{y_{i0}}{1-\pi} \right) - \left( \frac{y_{j1}}{\pi} + \frac{y_{j0}}{1-\pi} \right) \right]^2\right)
+\]
+Dado que \(\pi=\frac{T}{N}\) y \(1-\pi=\frac{(N-T)}{N}\), 
+\[
+=\frac{1}{N^2}\left(-\frac{1}{2} \sum_{i \ne j} \sum \Delta_{ij} \frac{N^2}{T^2\left(N-T\right)^2} \left[\left(N-T\right)\left(y_{i1} - y_{j1}\right)- T\left(y_{i0} - y_{j0}\right) \right]^2\right), (1)
+\]
+Veamos a qué es igual \(\Delta_{ij}\) para todo \(i \ne j \in V\),
+\[
+\Delta_{ij} = \pi_{ij}-\pi_{i}\pi_{j} = \frac{T(T-1)}{N(N-1)}-\frac{T(^2}{N^2}=\frac{-T(N-T)}{N^2(N-1)}
+\]
+Sustituyendo esta expresión en (1), se obtiene
+\[
+=\frac{1}{N^2}\left(-\frac{1}{2} \sum_{i} \sum_{j} \frac{-T(N-T)}{N^2(N-1)} \frac{N^2}{T^2\left(N-T\right)^2} \left[\left(N-T\right)\left(y_{i1} - y_{j1}\right)- T\left(y_{i0} - y_{j0}\right) \right]^2\right),
+\]
+\[
+=\frac{1}{2N^2}\left(\left[\frac{1}{T(N-T)}\right]\left[\frac{1}{N-1}\right] \left[\left(N-T\right)^2\sum_{i} \sum_{j} \left(y_{i1} - y_{j1}\right)^2 - 2\left(N-T\right)T \sum_{i} \sum_{j}\left(y_{i1} - y_{j1}\right)\left(y_{i0} - y_{j0}\right) + T^2\sum_{i} \sum_{j}\left(y_{i0} - y_{j0}\right)^2\right]\right) (2)
+\]
+Desarrollando los términos de la sumatoria por separado, se tiene que
+\[
+\sum_{i} \sum_{j} \left(y_{i1} - y_{j1}\right)^2 = \sum_{i} \sum_{j} \left( \left(y_{i1} - \overline{y_{1}}\right) - \left(y_{j1} - \overline{y_{1}}\right) \right)^2
+\]
+
+\[
+=\sum_{i} \sum_{j} \left(y_{i1} - \overline{y_{1}}\right)^2 - 2\sum_{i} \sum_{j}\left(y_{i1} - \overline{y_{1}}\right) \left(y_{j1} - \overline{y_{1}}\right)+\sum_{i} \sum_{j} \left(y_{j1} - \overline{y_{1}}\right)^2 
+\]
+
+Dado que \(\sum_{i}\left(y_{i1} - \overline{y_{1}}\right) \sum_{j}\left(y_{j1} - \overline{y_{1}}\right)=0\), entonces
+\[
+=\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2\sum_{j}1  +\sum_{j} \left(y_{j1} - \overline{y_{1}}\right)^2 \sum_{i} 1 
+\]
+\[
+=N\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2+N\sum_{j} \left(y_{j1} - \overline{y_{1}}\right)^2 
+\]
+\[
+=2N\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2 (3)
+\]
+Analógamente, se tiene que,
+\[
+\sum_{i} \sum_{j} \left(y_{i0} - y_{j0}\right)^2 =2N\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2  (4)
+\]
+\[
+\sum_{i} \sum_{j}\left(y_{i1} - y_{j1}\right)\left(y_{i0} - y_{j0}\right)=2N\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)\left(y_{i0} - \overline{y_{0}}\right) (5)
+\]
+Sustituyendo (3), (4) y (5) en (2), 
+\[
+=\frac{1}{2N^2}\left[\frac{1}{T(N-T)}\right]\left[\frac{1}{N-1}\right] \left[\left(N-T\right)^2 \left(2N\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2\right) - 2\left(N-T\right)T\left(2N\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)\left(y_{i0} - \overline{y_{0}}\right)\right)  + T^2\left(2N\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2\right) \right] 
+\]
+\[
+=\frac{1}{N}\left[\frac{1}{N-1}\right] \left[ \left[\frac{N-T}{T}\right]\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2 - 2\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)\left(y_{i0} - \overline{y_{0}}\right)  + \frac{T}{N-T}\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2 \right] 
+\]
+
+\[
+=\frac{1}{N}\left[\frac{1}{N-1}\right] \left[ \left[\frac{N-T}{T}\right]\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2 - 2\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)\left(y_{i0} - \overline{y_{0}}\right)  + \frac{T}{N-T}\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2 \right] 
+\]
+
+Sumando y restando , se tiene que
+\[
+=\frac{1}{N}\left[\frac{1}{N-1}\right] \left[ \left[\frac{C-T}{T}\right]\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2 + \sum_{i}\left((y_{i1} - \overline{y_{1}}) -(y_{i0} - \overline{y_{0}})\right)^2  + \frac{T-C}{C}\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2 \right] 
+\]
+\[
+=\frac{1}{N}\left[\frac{1}{N-1}\right] \left[ \left[\frac{C-T}{T}\right]\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2 + \sum_{i}\left((y_{i1} - y_{i0}) - (\overline{y_{1}} - \overline{y_{0}})\right)^2  + \frac{T-C}{C}\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2 \right] 
+\]
+\[
+=\frac{1}{N}\left[\frac{1}{N-1}\right] \left[\frac{C-T}{T}\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2 + \frac{T-C}{C}\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2 + \sum_{i}\left((y_{i1} - y_{i0}) - \tau_{ATE}\right)^2 \right] 
+\]
+
 

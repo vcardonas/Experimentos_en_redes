@@ -1796,16 +1796,16 @@ Resultados<br>observados
 Individuo
 </th>
 <th style="text-align:left;">
-Zi = 0
+<span class="math inline">\(Z_i = 0\)</span>
 </th>
 <th style="text-align:left;">
-Zi = 1
+<span class="math inline">\(Z_i = 1\)</span>
 </th>
 <th style="text-align:left;">
-Zi = 0
+<span class="math inline">\(Z_i = 0\)</span>
 </th>
 <th style="text-align:left;">
-Zi = 1
+<span class="math inline">\(Z_i = 1\)</span>
 </th>
 </tr>
 </thead>
@@ -1815,16 +1815,16 @@ Zi = 1
 1
 </td>
 <td style="text-align:left;">
-O1(0)
+<span class="math inline">\(\mathscr{O}_1(0)\)</span>
 </td>
 <td style="text-align:left;">
-O1(1)
+<span class="math inline">\(\mathscr{O}_1(1)\)</span>
 </td>
 <td style="text-align:left;">
-O1(0)
+<span class="math inline">\(\mathscr{O}_1(0)\)</span>
 </td>
 <td style="text-align:left;">
-?
+<span class="math inline">\(?\)</span>
 </td>
 </tr>
 <tr>
@@ -1832,16 +1832,16 @@ O1(0)
 2
 </td>
 <td style="text-align:left;">
-O2(0)
+<span class="math inline">\(\mathscr{O}_2(0)\)</span>
 </td>
 <td style="text-align:left;">
-O2(1)
+<span class="math inline">\(\mathscr{O}_2(1)\)</span>
 </td>
 <td style="text-align:left;">
-?
+<span class="math inline">\(?\)</span>
 </td>
 <td style="text-align:left;">
-O2(1)
+<span class="math inline">\(\mathscr{O}_2(1)\)</span>
 </td>
 </tr>
 </tbody>
@@ -2518,12 +2518,13 @@ posibles asignaciones de tratamiento <span class="math inline">\(\mathbf{z}\)</s
 &amp;
   \mathit{I}_{\{f(\mathbf{z}_{\mathit{M}}, \mathbf{x}_{N}) = c_k\}}
 \end{bmatrix}
-\end{equation}\]</span> Además, sea <span class="math inline">\(\mathbf{P} = diag(p_{z_1},\ldots,
-p_{z_\mathit{M}})\)</span>.</p>
-<p>Entonces, en la primera matriz simétrica <span class="math inline">\(N \times N\)</span>, podemos recuperar para una
-condición de exposición fija <span class="math inline">\(c_k\)</span>,
-tanto la probabilidad de exposición individual <span class="math inline">\(p_{i}^{e}(c_k)\)</span> como las probabilidades de
-exposición conjunta <span class="math inline">\(p_{ij}^{e}(c_k)\)</span>, para todos los
+\end{equation}\]</span></p>
+<p>Además, sea <span class="math inline">\(\mathbf{P} =
+diag(p_{z_1},\ldots, p_{z_\mathit{M}})\)</span>. Entonces, en la primera
+matriz simétrica <span class="math inline">\(N \times N\)</span>,
+podemos recuperar para una condición de exposición fija <span class="math inline">\(c_k\)</span>, tanto la probabilidad de exposición
+individual <span class="math inline">\(p_{i}^{e}(c_k)\)</span> como las
+probabilidades de exposición conjunta <span class="math inline">\(p_{ij}^{e}(c_k)\)</span>, para todos los
 individuos <span class="math inline">\(i, j = 1,\ldots,N\)</span>: <span class="math display">\[\begin{equation}
 \mathit{I}_k \mathbf{P} \mathit{I}_{k}^{T} =
 \begin{bmatrix}
@@ -2769,6 +2770,121 @@ los estimadores son mejores para capturar <span class="math inline">\(\tau(c_{01
 <h1><span class="header-section-number">5</span> Referencias</h1>
 <p>Kolaczyk, E. D., &amp; Csárdi, G. (2014). <em>Statistical analysis of
 network data with R</em> (Vol. 65). New York: Springer. Chapter 10.</p>
+</div>
+<div id="anexo" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Anexo</h1>
+<p><span class="math display">\[
+V(\hat{\tau}_{ATE}(z)) = \frac{1}{N^2}V( \sum_{i=1}^{N} \left[
+\frac{z_i}{\pi_{i}}y_{i1} - \frac{(1 - z_i)}{1-\pi_{i}} y_{i0} \right] )
+\]</span> <span class="math display">\[
+= \frac{1}{N^2}V( \sum_{i=1}^{N} \left[ (\frac{y_{i1}}{\pi_{i}}+
+\frac{y_{i0}}{1-\pi_{i}})z_i- \frac{y_{i0}}{1-\pi_{i}}  \right] )
+\]</span> Dado que bajo un diseño experimental completamente
+aleatorizado la probabilidad de asignación de todas los individuos es
+constante, se tiene que <span class="math display">\[
+=\frac{1}{N^2}\sum_i \left[ \left( \frac{y_{i1}}{\pi} +
+\frac{y_{i0}}{1-\pi} \right)^2 V(Z_i) \right] + \sum_{i \ne j} \sum
+\left[ \left( \frac{y_{i1}}{\pi} + \frac{y_{i0}}{1-\pi} \right) \left(
+\frac{y_{j1}}{\pi} + \frac{y_{j0}}{1-\pi} \right) \text{Cov}(Z_i, Z_j)
+\right]
+\]</span> <span class="math display">\[
+=\frac{1}{N^2} \sum_{i} \sum_{j} \left[ \left( \frac{y_{i1}}{\pi} +
+\frac{y_{i0}}{1-\pi} \right) \left( \frac{y_{j1}}{\pi} +
+\frac{y_{j0}}{1-\pi} \right) \text{Cov}(Z_i, Z_j) \right]
+\]</span> Al denotar la covarianza <span class="math inline">\(\text{Cov}(Z_i, Z_j)\)</span> como <span class="math inline">\(\Delta_{ij}\)</span> y al aplicar la definición de
+Yates &amp; Grundy de la varianza del estimador de Horvitz-Thompson, se
+obtiene <span class="math display">\[
+=\frac{1}{N^2}\left(-\frac{1}{2} \sum_{i} \sum_{j} \Delta_{ij} \left[
+\left( \frac{y_{i1}}{\pi} + \frac{y_{i0}}{1-\pi} \right) - \left(
+\frac{y_{j1}}{\pi} + \frac{y_{j0}}{1-\pi} \right) \right]^2\right)
+\]</span> Dado que <span class="math inline">\(\pi=\frac{T}{N}\)</span>
+y <span class="math inline">\(1-\pi=\frac{(N-T)}{N}\)</span>, <span class="math display">\[
+=\frac{1}{N^2}\left(-\frac{1}{2} \sum_{i \ne j} \sum \Delta_{ij}
+\frac{N^2}{T^2\left(N-T\right)^2} \left[\left(N-T\right)\left(y_{i1} -
+y_{j1}\right)- T\left(y_{i0} - y_{j0}\right) \right]^2\right), (1)
+\]</span> Veamos a qué es igual <span class="math inline">\(\Delta_{ij}\)</span> para todo <span class="math inline">\(i \ne j \in V\)</span>, <span class="math display">\[
+\Delta_{ij} = \pi_{ij}-\pi_{i}\pi_{j} =
+\frac{T(T-1)}{N(N-1)}-\frac{T(^2}{N^2}=\frac{-T(N-T)}{N^2(N-1)}
+\]</span> Sustituyendo esta expresión en (1), se obtiene <span class="math display">\[
+=\frac{1}{N^2}\left(-\frac{1}{2} \sum_{i} \sum_{j}
+\frac{-T(N-T)}{N^2(N-1)} \frac{N^2}{T^2\left(N-T\right)^2}
+\left[\left(N-T\right)\left(y_{i1} - y_{j1}\right)- T\left(y_{i0} -
+y_{j0}\right) \right]^2\right),
+\]</span> <span class="math display">\[
+=\frac{1}{2N^2}\left(\left[\frac{1}{T(N-T)}\right]\left[\frac{1}{N-1}\right]
+\left[\left(N-T\right)^2\sum_{i} \sum_{j} \left(y_{i1} - y_{j1}\right)^2
+- 2\left(N-T\right)T \sum_{i} \sum_{j}\left(y_{i1} -
+y_{j1}\right)\left(y_{i0} - y_{j0}\right) + T^2\sum_{i}
+\sum_{j}\left(y_{i0} - y_{j0}\right)^2\right]\right) (2)
+\]</span> Desarrollando los términos de la sumatoria por separado, se
+tiene que <span class="math display">\[
+\sum_{i} \sum_{j} \left(y_{i1} - y_{j1}\right)^2 = \sum_{i} \sum_{j}
+\left( \left(y_{i1} - \overline{y_{1}}\right) - \left(y_{j1} -
+\overline{y_{1}}\right) \right)^2
+\]</span></p>
+<p><span class="math display">\[
+=\sum_{i} \sum_{j} \left(y_{i1} - \overline{y_{1}}\right)^2 - 2\sum_{i}
+\sum_{j}\left(y_{i1} - \overline{y_{1}}\right) \left(y_{j1} -
+\overline{y_{1}}\right)+\sum_{i} \sum_{j} \left(y_{j1} -
+\overline{y_{1}}\right)^2
+\]</span></p>
+<p>Dado que <span class="math inline">\(\sum_{i}\left(y_{i1} -
+\overline{y_{1}}\right) \sum_{j}\left(y_{j1} -
+\overline{y_{1}}\right)=0\)</span>, entonces <span class="math display">\[
+=\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2\sum_{j}1  +\sum_{j}
+\left(y_{j1} - \overline{y_{1}}\right)^2 \sum_{i} 1
+\]</span> <span class="math display">\[
+=N\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2+N\sum_{j}
+\left(y_{j1} - \overline{y_{1}}\right)^2
+\]</span> <span class="math display">\[
+=2N\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2 (3)
+\]</span> Analógamente, se tiene que, <span class="math display">\[
+\sum_{i} \sum_{j} \left(y_{i0} - y_{j0}\right)^2 =2N\sum_{i}\left(y_{i0}
+- \overline{y_{0}}\right)^2  (4)
+\]</span> <span class="math display">\[
+\sum_{i} \sum_{j}\left(y_{i1} - y_{j1}\right)\left(y_{i0} -
+y_{j0}\right)=2N\sum_{i}\left(y_{i1} -
+\overline{y_{1}}\right)\left(y_{i0} - \overline{y_{0}}\right) (5)
+\]</span> Sustituyendo (3), (4) y (5) en (2), <span class="math display">\[
+=\frac{1}{2N^2}\left[\frac{1}{T(N-T)}\right]\left[\frac{1}{N-1}\right]
+\left[\left(N-T\right)^2 \left(2N\sum_{i}\left(y_{i1} -
+\overline{y_{1}}\right)^2\right) -
+2\left(N-T\right)T\left(2N\sum_{i}\left(y_{i1} -
+\overline{y_{1}}\right)\left(y_{i0} - \overline{y_{0}}\right)\right)  +
+T^2\left(2N\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2\right)
+\right]
+\]</span> <span class="math display">\[
+=\frac{1}{N}\left[\frac{1}{N-1}\right] \left[
+\left[\frac{N-T}{T}\right]\sum_{i}\left(y_{i1} -
+\overline{y_{1}}\right)^2 - 2\sum_{i}\left(y_{i1} -
+\overline{y_{1}}\right)\left(y_{i0} - \overline{y_{0}}\right)  +
+\frac{T}{N-T}\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2 \right]
+\]</span></p>
+<p><span class="math display">\[
+=\frac{1}{N}\left[\frac{1}{N-1}\right] \left[
+\left[\frac{N-T}{T}\right]\sum_{i}\left(y_{i1} -
+\overline{y_{1}}\right)^2 - 2\sum_{i}\left(y_{i1} -
+\overline{y_{1}}\right)\left(y_{i0} - \overline{y_{0}}\right)  +
+\frac{T}{N-T}\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2 \right]
+\]</span></p>
+<p>Sumando y restando , se tiene que <span class="math display">\[
+=\frac{1}{N}\left[\frac{1}{N-1}\right] \left[
+\left[\frac{C-T}{T}\right]\sum_{i}\left(y_{i1} -
+\overline{y_{1}}\right)^2 + \sum_{i}\left((y_{i1} - \overline{y_{1}})
+-(y_{i0} - \overline{y_{0}})\right)^2  +
+\frac{T-C}{C}\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2 \right]
+\]</span> <span class="math display">\[
+=\frac{1}{N}\left[\frac{1}{N-1}\right] \left[
+\left[\frac{C-T}{T}\right]\sum_{i}\left(y_{i1} -
+\overline{y_{1}}\right)^2 + \sum_{i}\left((y_{i1} - y_{i0}) -
+(\overline{y_{1}} - \overline{y_{0}})\right)^2  +
+\frac{T-C}{C}\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2 \right]
+\]</span> <span class="math display">\[
+=\frac{1}{N}\left[\frac{1}{N-1}\right]
+\left[\frac{C-T}{T}\sum_{i}\left(y_{i1} - \overline{y_{1}}\right)^2 +
+\frac{T-C}{C}\sum_{i}\left(y_{i0} - \overline{y_{0}}\right)^2 +
+\sum_{i}\left((y_{i1} - y_{i0}) - \tau_{ATE}\right)^2 \right]
+\]</span></p>
 </div>
 
 
