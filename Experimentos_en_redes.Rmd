@@ -76,7 +76,7 @@ Y a nivel de la población, como
 
 ## Inferencia Causal
 
-La asignación de los individuos al grupo de tratamiento y al de control puede representarse mdiante un vector. Sea \(Z = (Z_1, \ldots, Z_{N})^T \in \{0, 1\}^{N}\) el **vector aleatorio de asignación de la intervención**; si la unidad experimental \(i\) recibe el tratamiento, \(Z_i\) es igual a 1, de lo contrario es igual a 0.
+La asignación de los individuos al grupo de tratamiento y al de control puede representarse mdiante un vector. Sea \(Z = (Z_1, \ldots, Z_{N})^T \in \{0, 1\}^{N}\) el **vector aleatorio de asignación de la intervención**, donde \(N\) es el número total de individuos; si la unidad experimental \(i\) recibe el tratamiento, \(Z_i\) es igual a 1, de lo contrario es igual a 0.
 
 Por diseño experimental entenderemos una manera de elegir dicho vector y \(p_z = P(Z = z)\) denotará la **probabilidad de que la asignación de tratamiento \(z\) sea generada por el diseño**.
 
@@ -124,7 +124,7 @@ V(\hat{\tau}_{ATE}(z)) = V( \frac{1}{N} \sum_{i=1}^{N} \left[ \frac{z_i}{p_{i}}\
 
 Finalmente, se obtiene que
 
-$$Var(\hat{\tau}_{ATE}(\mathbf{Z})) = \frac{S_c^2}{C} + \frac{S_t^2}{T} + \frac{S_{tc}^2}{N}$$
+$$Var(\hat{\tau}_{ATE}(\mathbf{Z})) = \frac{S_c^2}{C} + \frac{S_t^2}{T} - \frac{S_{tc}^2}{N}$$
 donde
 $$S_c^2 = \frac{1}{N - 1} \sum_{i=1}^{N} \left[ \mathscr{O}_i(1) - \bar{\mathscr{O}}(0) \right]^2 \quad \text{,}$$
 $$S_t^2 = \frac{1}{N - 1} \sum_{i=1}^{N} \left[ \mathscr{O}_i(1) - \bar{\mathscr{O}}(1) \right]^2 \quad \text{y}$$
@@ -173,7 +173,15 @@ Hay tres subgrupos presentes en la red, codificados por el atributo nodal $\verb
 table(V(strike)$race)
 ```
 
-El experimento consiste en explicar los cambios en las condiciones de pago para influir en el comportamiento organizacional. En la siguiente figura se presentan las relaciones al interior del sindicato. La pertenencia étnica y el ciclo de vida se indican según la forma de los vértices. Los individuos seleccionados para la intervención son coloreados en rojo. Los dos representantes sindicales, negociadores en el intento de comunicación inicial, están marcados con un asterisco (es decir, Sam y Wendle).
+El experimento consiste en **explicar los cambios en las condiciones de pago para influir en el comportamiento organizacional**, es decir, aprovechando la estructura de comunicación entre un grupo de empleados en huelga se busca conciliar la disputa en una instalación de fabricación de productos forestales.
+
+En la siguiente figura se presentan las relaciones al interior del sindicato, según características nodales:
+
+* La pertenencia étnica y el ciclo de vida se indican según la **forma de los vértices**. El círculo refiere a jóvenes hispanos, cuadrado a jóvenes anglohablantes y triángulo a adultos anglohablantes.
+
+* Los individuos seleccionados para la intervención son **coloreados en rojo**. 
+
+* Los dos representantes sindicales, negociadores en el intento de comunicación inicial, están **marcados con un asterisco** (es decir, Sam y Wendle).
 
 ```{r, fig.align='center'}
 # Darle forma de triángulo a los vértices
@@ -335,7 +343,7 @@ Al utilizar tres algortimos para la segmentación del grafo: agrupación jerárq
 
 Al buscar extender el marco clásico de resultados potenciales a experimentos en red, surge una tensión entre la complejidad de la interferencia y su impacto en:
 
-1. Definir estimaciones significativas.
+1. Definir parámetros.
 
 2. Producir estimadores y cuantificar la incertidumbre asociada.
 
@@ -722,6 +730,8 @@ sapply(ACE, sd) / c(9, 6, 4)
 ```
 
 Vemos que la diferencia entre el valor esperado y los estimadores de los tres efectos causales promedio están cercanos a 0, sin embargo, los errores estándar correspondientes son bastante dispares. En este orden, los estimadores son mejores para capturar $\tau(c_{01}, c_{00})$, luego $\tau(c_{10}, c_{00})$ y, por último, $\tau(c_{11}, c_{00})$.
+
+En conclusión, el diseño experimental permite **observar no solo el efecto directo de la intervención sobre los individuos tratados, sino también los efectos indirectos en sus colegas con los que están conectados**. Este enfoque es particularmente útil en situaciones donde las decisiones y comportamientos de un individuo pueden impactar significativamente en el comportamiento de otros a través de su red de comunicación. **Cambiar de un diseño experimental a un diseño no experimental** puede afectar significativamente la capacidad para establecer relaciones causales y generalizar los resultados.
 
 # Referencias
 
