@@ -1868,7 +1868,8 @@ Causal</h2>
 <p>La asignación de los individuos al grupo de tratamiento y al de
 control puede representarse mdiante un vector. Sea <span class="math inline">\(Z = (Z_1, \ldots, Z_{N})^T \in \{0,
 1\}^{N}\)</span> el <strong>vector aleatorio de asignación de la
-intervención</strong>; si la unidad experimental <span class="math inline">\(i\)</span> recibe el tratamiento, <span class="math inline">\(Z_i\)</span> es igual a 1, de lo contrario es
+intervención</strong>, donde <span class="math inline">\(N\)</span> es
+el número total de individuos; si la unidad experimental <span class="math inline">\(i\)</span> recibe el tratamiento, <span class="math inline">\(Z_i\)</span> es igual a 1, de lo contrario es
 igual a 0.</p>
 <p>Por diseño experimental entenderemos una manera de elegir dicho
 vector y <span class="math inline">\(p_z = P(Z = z)\)</span> denotará la
@@ -2029,14 +2030,24 @@ table(V(strike)$race)</code></pre>
 <pre><code>## 
 ## OE YE YS 
 ## 11  9  4</code></pre>
-<p>El experimento consiste en explicar los cambios en las condiciones de
-pago para influir en el comportamiento organizacional. En la siguiente
-figura se presentan las relaciones al interior del sindicato. La
-pertenencia étnica y el ciclo de vida se indican según la forma de los
-vértices. Los individuos seleccionados para la intervención son
-coloreados en rojo. Los dos representantes sindicales, negociadores en
-el intento de comunicación inicial, están marcados con un asterisco (es
-decir, Sam y Wendle).</p>
+<p>El experimento consiste en <strong>explicar los cambios en las
+condiciones de pago para influir en el comportamiento
+organizacional</strong>, es decir, aprovechando la estructura de
+comunicación entre un grupo de empleados en huelga se busca conciliar la
+disputa en una instalación de fabricación de productos forestales.</p>
+<p>En la siguiente figura se presentan las relaciones al interior del
+sindicato, según características nodales:</p>
+<ul>
+<li><p>La pertenencia étnica y el ciclo de vida se indican según la
+<strong>forma de los vértices</strong>. El círculo refiere a jóvenes
+hispanos, cuadrado a jóvenes anglohablantes y triángulo a adultos
+anglohablantes.</p></li>
+<li><p>Los individuos seleccionados para la intervención son
+<strong>coloreados en rojo</strong>.</p></li>
+<li><p>Los dos representantes sindicales, negociadores en el intento de
+comunicación inicial, están <strong>marcados con un asterisco</strong>
+(es decir, Sam y Wendle).</p></li>
+</ul>
 <pre class="r"><code># Darle forma de triángulo a los vértices
 mytriangle &lt;- function(coords, v=NULL, params) {
   vertex.color &lt;- params(&quot;vertex&quot;, &quot;color&quot;)
@@ -2763,6 +2774,15 @@ sapply(ACE, sd) / c(9, 6, 4)</code></pre>
 los tres efectos causales promedio están cercanos a 0, sin embargo, los
 errores estándar correspondientes son bastante dispares. En este orden,
 los estimadores son mejores para capturar <span class="math inline">\(\tau(c_{01}, c_{00})\)</span>, luego <span class="math inline">\(\tau(c_{10}, c_{00})\)</span> y, por último, <span class="math inline">\(\tau(c_{11}, c_{00})\)</span>.</p>
+<p>En conclusión, el diseño experimental permite <strong>observar no
+solo el efecto directo de la intervención sobre los individuos tratados,
+sino también los efectos indirectos en sus colegas con los que están
+conectados</strong>. Este enfoque es particularmente útil en situaciones
+donde las decisiones y comportamientos de un individuo pueden impactar
+significativamente en el comportamiento de otros a través de su red de
+comunicación. <strong>Cambiar de un diseño experimental a un diseño no
+experimental</strong> puede afectar significativamente la capacidad para
+establecer relaciones causales y generalizar los resultados.</p>
 </div>
 </div>
 </div>
