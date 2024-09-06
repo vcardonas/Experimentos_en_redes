@@ -733,10 +733,263 @@ Vemos que la diferencia entre el valor esperado y los estimadores de los tres ef
 
 En conclusión, el diseño experimental permite **observar no solo el efecto directo de la intervención sobre los individuos tratados, sino también los efectos indirectos en sus colegas con los que están conectados**. Este enfoque es particularmente útil en situaciones donde las decisiones y comportamientos de un individuo pueden impactar significativamente en el comportamiento de otros a través de su red de comunicación. **Cambiar de un diseño experimental a un diseño no experimental** puede afectar significativamente la capacidad para establecer relaciones causales y generalizar los resultados.
 
+# Ejemplo con Datos Reales: Climas Cambiantes de Conflicto
+
+La colección de datos proviene de **un experimento de campo** a gran escala en 56 escuelas secundarias públicas de Nueva Jersey con 24.191 estudiantes. **Se investigó cómo el comportamiento de los individuos influye en sus acciones al observar a personas de su comunidad**. La intervención anticconflicto se aplicó aleatoriamente a grupos de 20 a 32 estudiantes en las escuelas seleccionadas. Los datos incluyen redes sociales de los estudiantes, encuestas sobre normas de conflicto y variables demográficas como género, edad, raza, y características del hogar, con un total de 482 variables para 24.471 casos. Las encuestas se realizaron al inicio y al final del año escolar 2012-2013.
+
+**Nota sobre acceso a datos:** La recopilación de datos no pertenece a las autoras del presente cuaderno, sino que está asociada con la publicación *"Changing climates of conflict: A social network experiment in 56 schools"* por Elizabeth Levy Paluck, Hana Shepherd, y Peter M. Aronow. Los usuarios pueden visitar el [sitio web de la publicación](http://www.pnas.org/content/113/3/566) y consultar los paquetes (.zip) incluidos en la documentación de este estudio. Así mismo, la versión de los datos utilizados en este ejercicio se puede obtener por medio del siguiente enlace: [https://www.icpsr.umich.edu/web/civicleads/studies/37070](https://www.icpsr.umich.edu/web/civicleads/studies/37070).
+
+```{r results = 'hold'}
+# Librerías
+suppressMessages(suppressWarnings(library(igraph)))
+suppressMessages(suppressWarnings(library(tidyverse)))
+suppressMessages(suppressWarnings(library(RColorBrewer)))
+suppressMessages(suppressWarnings(library(fields)))
+
+# Cargar datos
+load("./Data/DS0001/37070-0001-Data.rda")
+
+# Renombrar datos
+assign("conflict", get("da37070.0001"))
+rm(da37070.0001)
+```
+
+Para el presente ejercicio, con el objetivo de delimitar el análisis, **se selecciona al azar una escuela que haya sido tratada**. Dentro de esta escuela, se encuentran 3 subgrupos presentes en la red:
+
+* **(0) Sin tratamiento ni control**: Estudiantes que no recibieron tratamiento.
+* **(1) Tratamiento**: Estudiantes que participaron en la intervención anticonflicto.
+* **(2) Control**: Estudiantes sin tratamiento, ni compañeros tratados que sean referentes sociales.
+
+Para analizar las relaciones entre los estudiantes, se les planteó la siguiente pregunta: *"En las últimas semanas, decidí pasar tiempo con estos estudiantes de mi escuela (ya sea en la escuela, fuera de ella o en línea)"*. Cada estudiante debía seleccionar un máximo de 5 compañeros.
+
+Asimismo, se utilizaron los **eventos disciplinarios reportados** por los docentes para cada estudiante como medida de la variable de conflictos; dicha variable fue extraída de los registros administrativos correspondientes a todo el año.
+
+```{r results = 'hold'}
+# Escoger al azar una escuela que haya recibido tratamiento
+set.seed(123)
+num <- sample(unique(conflict$SCHID[conflict$SCHTREAT == "(1) Treatment school (Roots meetings 2012-2013)"]), 1)
+
+# Filtrar por escuela seleccionada
+conflict_29 <- conflict[conflict$SCHID == num,]
+
+# Modificar df para crear al grafo
+conflict_29 <- conflict_29 %>% 
+  pivot_longer(cols = ST1:ST5, names_to = "ST_names", values_to = "to") %>% 
+  dplyr::mutate(from = as.numeric(ID),
+                event_disc = rowSums(select(., matches("^DE[0-9]")))) %>% 
+  dplyr::select(c(from, to, TREAT, event_disc)) %>% na.omit()
+
+# Extraer vertices y aristas
+vertices <- conflict_29[c(1,3:4)] %>% distinct()
+conflict_29 <- conflict_29 %>% filter(to %in% vertices$from)
+edges <- conflict_29[1:2]
+
+vertices %>% 
+  group_by(TREAT) %>% 
+  summarise(n = n_distinct(from))
+```
+
+En el caso de la escuela 29, la muestra está compuesta por 262 estudiantes, distribuidos de la siguiente forma: 217 estudiantes pertenecen al grupo de sin tratamiento ni control, 24 al grupo de tratamiento, y 21 al grupo de control.
+
+En la siguiente figura se visualiza la estructura de la red, que cuenta con un total de 863 enlaces entre los nodos. La red presenta una **densidad** de 0.03, lo que indica que solo el 3% de todas las posibles conexiones están presentes. Así mismo, cada nodo está conectado a aproximadamente 7 otros nodos. Por último, en promedio, cualquier par de nodos está separado por poco más de 3 enlaces.
+
+```{r, fig.height = 8, fig.width = 10, fig.align = 'center'}
+# Grafo
+g <- graph_from_data_frame(edges, directed = FALSE, vertices = vertices)
+
+# Layout
+set.seed(123)
+l <- layout.fruchterman.reingold(g)
+
+# Visualización
+palette_colors <- brewer.pal(length(unique(V(g)$TREAT)), "Set2")
+exposure_colors <- setNames(palette_colors, unique(V(g)$TREAT))
+vertex_colors <- exposure_colors[V(g)$TREAT]
+
+plot(g, layout = l, vertex.label = NA, vertex.color = vertex_colors, vertex.size = 4)
+legend("topleft",
+       legend = names(exposure_colors), 
+       fill = exposure_colors, 
+       title = "TREAT")
+legend("bottomleft", 
+       legend = c(paste0("Orden = ", vcount(g)),
+                  paste0("Tamaño = ", ecount(g)),
+                  paste0("Densidad = ", round(edge_density(g), 2)),
+                  paste0("Grado promedio = ", round(mean(degree(g)), 2)),
+                  paste0("Diámetro = ", round(diameter(g, directed = FALSE, unconnected = TRUE), 2)),
+                  paste0("Distancia promedio = ", round(mean_distance(g, directed = FALSE, unconnected = TRUE), 2)),
+                  paste("Triángulos = ", sum(count_triangles(g))/2),
+                  paste("Transitividad = ", round(transitivity(g, type="global"), 2)),
+                  paste("Num. clique = ", clique_num(graph = g))), bty = "n", cex = 0.7, text.width = 2)
+```
+
+Se definen las mismas **categorías de exposición** de 4 niveles utilizadas previamente:
+
+* $c_{11}$: Exposición directa e indirecta
+* $c_{10}$: Exposición directa aislada
+* $c_{01}$: Exposición indirecta
+* $c_{00}$: Sin exposición
+
+En la red de conflicto, se observó que 113 estudiantes no estuvieron expuestos, 125 recibieron solo exposición indirecta, 10 tuvieron exposición directa aislada, y 14 estuvieron expuestos tanto de manera directa como indirecta.
+
+```{r results = 'hold'}
+
+# Vector de asignación
+z <- ifelse(V(g)$TREAT == "(1) Treatment", 1, 0)
+
+# Identificadora
+A <- as_adjacency_matrix(g)
+I.ex.nbrs <- as.numeric(z%*%A > 0)
+
+# Categorías de exposición
+## Directa e Indirecta
+V(g)[z*I.ex.nbrs==1]$exposure <- "c['11']"
+
+## Indirecta
+V(g)[(1-z)*I.ex.nbrs==1]$exposure <- "c['01']"
+
+## Directa aislada
+V(g)[z*(1-I.ex.nbrs)==1]$exposure <- "c['10']"
+
+## No exposición
+V(g)[(1-z)*(1-I.ex.nbrs)==1]$exposure <- "c['00']"
+
+table(V(g)$exposure)
+```
+
+A continuación, se presentan las categorías de exposición, representadas por diferentes colores. Además, se puede observar el número de eventos disciplinarios reportados para cada estudiante, que se muestra mediante el tamaño de los vértices. Se nota que **los estudiantes que recibieron exposición indirecta, así como aquellos que no fueron expuestos a la intervención, tendieron a presentar un mayor número de eventos disciplinarios a lo largo del año**.
+
+```{r, fig.height = 8, fig.width = 10, fig.align = 'center'}
+# Definir colores para los valores de exposición
+palette_colors <- brewer.pal(length(unique(V(g)$exposure)), "Set3")
+exposure_colors <- setNames(palette_colors, unique(V(g)$exposure))
+vertex_colors <- exposure_colors[V(g)$exposure]
+
+# Visualización
+plot(g, layout = l, vertex.label = NA, vertex.color = vertex_colors, vertex.size = sqrt(V(g)$event_disc)*4)
+legend("topleft",
+       legend = parse(text = unique(V(g)$exposure)), 
+       fill = exposure_colors, 
+       title = "Niveles de exposición")
+legend("left", 
+       legend = as.character(sort(unique(V(g)$event_disc))), 
+       pch = 21, 
+       pt.bg = "grey",  # Color de fondo de los puntos en la leyenda
+       pt.cex = sqrt(1:length(V(g)$event_disc)),
+       title = "Eventos \ndisciplinarios")
+```
+
+Las teorías del comportamiento humano sugieren que los individuos prestan atención al comportamiento de ciertas personas de su comunidad para comprender qué es socialmente normativo y ajustar su propio comportamiento en respuesta. Específicamente, el experimento realizado por Paluck et. al (2020) intenta determinar el poder relativo de ciertos individuos para influir en el comportamiento de otros, por medio de una **intervención experimental para fomentar el comportamiento anticonflicto** entre un grupo de estudiantes.
+
+Teniendo en cuenta lo anterior, se espera que el comportamiento conflictivo, medido por el número de eventos disciplinarios en los que los estudiantes se involucran a lo largo del año, disminuya en función de la exposición a la intervención.
+
+```{r results = 'hold'}
+O.c00 <- mean(V(g)$event_disc[V(g)$exposure == "c['00']"])
+O.c01 <- mean(V(g)$event_disc[V(g)$exposure == "c['01']"])
+O.c10 <- mean(V(g)$event_disc[V(g)$exposure == "c['10']"])
+O.c11 <- mean(V(g)$event_disc[V(g)$exposure == "c['11']"])
+
+c(O.c00, O.c01, O.c10, O.c11)
+```
+
+Sin embargo, los resultados sugieren lo contrario. En orden de mayor a menor conflictividad, en promedio, se observa lo siguiente: exposición completa, exposición indirecta, sin exposición y exposición directa aislada.
+
+```{r results = 'hold'}
+c(O.c01, O.c10, O.c11) - O.c00
+```
+
+Se pueden usar simulaciones de Monte Carlo para aproximar el valor de las probabilidades de exposición. Con solo 24 de 262 estudiantes tratados, solo las probabilidades de exposición indirecta y sin exposición tienen valores altos. 
+
+```{r, fig.height = 8, fig.width = 10, fig.align = 'center'}
+# Inicializar
+set.seed(123)
+
+nv <- vcount(g)
+m <- 24 # Número de expuestos directamente
+n <- 10000 # Número de ensayos de Montecarlo
+
+# 4 condiciones de exposición
+I11 <- matrix(,nrow=nv,ncol=n)
+I10 <- matrix(,nrow=nv,ncol=n)
+I01 <- matrix(,nrow=nv,ncol=n)
+I00 <- matrix(,nrow=nv,ncol=n)
+
+# Muestreo Monte Carlo
+for(i in 1:n){
+  z <- rep(0, nv) # Vector z
+  reps.ind <- sample((1:nv), m, replace = FALSE)
+  z[reps.ind] <- 1 # Asignar 1 al vector z
+  
+  reps.nbrs <- as.numeric(z%*%A > 0) # Indicador de vecinos expuestos
+  
+  # Una matriz por cada condición de exposición
+  I11[,i] <- z*reps.nbrs
+  I10[,i] <- z*(1-reps.nbrs)
+  I01[,i] <- (1-z)*reps.nbrs
+  I00[,i] <- (1-z)*(1-reps.nbrs)
+}
+
+I11.11 <- I11%*%t(I11)/n
+I10.10 <- I10%*%t(I10)/n
+I01.01 <- I01%*%t(I01)/n
+I00.00 <- I00%*%t(I00)/n
+
+# Visualización
+plot_Ik <- function(M, title) {
+  # Márgenes
+  par(mar = c(4,4,4,4))
+  # Matriz
+  image(M, zlim = c(0, 0.7), xaxt = "n", yaxt = "n", col = cm.colors(16))
+  # Título
+  mtext(side = 3, text = title, at = 0.5, las = 1)
+  # Añadir barra de colores
+  image.plot(legend.only = TRUE, zlim = range(seq(0.0,0.7,0.1)), col = cm.colors(16))
+}
+
+# Crear los cuatro gráficos
+par(mfrow = c(2, 2))
+plot_Ik(I11.11, expression("Exposición Directa + Indirecta"~(c["11"])))
+plot_Ik(I10.10, expression("Exposición Directa Aislada"~(c["10"])))
+plot_Ik(I01.01, expression("Exposición Indirecta"~(c["01"])))
+plot_Ik(I00.00, expression("No Exposición"~(c["00"])))
+```
+
+Por último, las estimaciones de los efectos causales promedio $\tau(c_{11}, c_{00})$, $\tau(c_{10}, c_{00})$ y $\tau(c_{01}, c_{00})$ se obtienen a continuación.
+
+```{r results = 'hold'}
+# Vector de asignación
+z <- ifelse(V(g)$TREAT == "(1) Treatment", 1, 0)
+
+# Indicador de vecinos expuestos
+reps.nbrs <- as.numeric(z%*%A > 0)
+
+# Condiciones de exposición
+c11 <- z*reps.nbrs
+c10 <- z*(1-reps.nbrs)
+c01 <- (1-z)*reps.nbrs
+c00 <- (1-z)*(1-reps.nbrs)
+
+# Estimadores Horvitz y Thompson
+Obar.c11 <- O.c11*mean(c11/diag(I11.11), na.rm = TRUE)
+Obar.c10 <- O.c10*mean(c10/diag(I10.10), na.rm = TRUE)
+Obar.c01 <- O.c01*mean(c01/diag(I01.01), na.rm = TRUE)
+Obar.c00 <- O.c00*mean(c00/diag(I00.00), na.rm = TRUE)
+
+# Average causal effects
+ACE <- c(Obar.c11, Obar.c10, Obar.c01) - Obar.c00
+ACE
+```
+
+```{r results = 'hold'}
+# Diferencias con el valor obtenido
+print(ACE - c(O.c11-O.c00, O.c10-O.c00, O.c01-O.c00))
+```
+
 # Referencias
 
 Kolaczyk, E. D., & Csárdi, G. (2014). *Statistical analysis of network data with R* (Vol. 65). New York: Springer. Chapter 10.
 
+Paluck, Elizabeth Levy, Shepherd, Hana R., and Aronow, Peter. Changing Climates of Conflict: A Social Network Experiment in 56 Schools, New Jersey, 2012-2013. Inter-university Consortium for Political and Social Research [distributor], 2020-09-14. https://doi.org/10.3886/ICPSR37070.v2
 
 # Anexo
 
