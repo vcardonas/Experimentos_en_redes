@@ -733,7 +733,7 @@ Vemos que la diferencia entre el valor esperado y los estimadores de los tres ef
 
 En conclusión, el diseño experimental permite **observar no solo el efecto directo de la intervención sobre los individuos tratados, sino también los efectos indirectos en sus colegas con los que están conectados**. Este enfoque es particularmente útil en situaciones donde las decisiones y comportamientos de un individuo pueden impactar significativamente en el comportamiento de otros a través de su red de comunicación. **Cambiar de un diseño experimental a un diseño no experimental** puede afectar significativamente la capacidad para establecer relaciones causales y generalizar los resultados.
 
-# Ejemplo con Datos Reales: Climas Cambiantes de Conflicto
+# Ejemplo 2: Climas Cambiantes de Conflicto
 
 La colección de datos proviene de **un experimento de campo** a gran escala en 56 escuelas secundarias públicas de Nueva Jersey con 24.191 estudiantes. **Se investigó cómo el comportamiento de los individuos influye en sus acciones al observar a personas de su comunidad**. La intervención anticconflicto se aplicó aleatoriamente a grupos de 20 a 32 estudiantes en las escuelas seleccionadas. Los datos incluyen redes sociales de los estudiantes, encuestas sobre normas de conflicto y variables demográficas como género, edad, raza, y características del hogar, con un total de 482 variables para 24.471 casos. Las encuestas se realizaron al inicio y al final del año escolar 2012-2013.
 
